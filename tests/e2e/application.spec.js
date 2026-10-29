@@ -32,7 +32,7 @@ test('Mitarbeiter bucht fünf Tage und storniert mit vollständiger Erstattung',
   await page.getByRole('button', { name: 'Stornieren', exact: true }).click();
   await expect(page.locator('.toast')).toContainText('Guthaben wurde freigegeben');
   await expect(page.locator('.stat-card').first()).toContainText('30');
-  await expect(page.getByText('Storniert', { exact: true })).toBeVisible();
+  await expect(page.locator('.status-pill.cancelled')).toHaveText('Storniert');
 });
 test('Mitarbeiter sieht weder Adminnavigation noch fremde Abteilungsereignisse', async ({
   page,

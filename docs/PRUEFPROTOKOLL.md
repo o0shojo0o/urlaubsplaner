@@ -13,6 +13,7 @@ Stand: 29. Oktober 2026. Alle Daten in Tests, Screenshots und Lasttest sind synt
 - Bei Browserprüfung gefundenen Fehler in der kontrollierten Datumseingabe korrigiert; explizite Input-Verarbeitung verhindert das Zurückspringen auf das vorherige Datum.
 - Responsive Buchungsansicht bei 360 × 800 px geprüft: Dialogbreite 326 px, Inhaltsbreite/Scrollbreite jeweils 324 px, kein horizontales Überlaufen; langes Formular vertikal scrollbar.
 - Docker-Image unter Linux/ARM64 mit Node 24 erfolgreich gebaut; Compose startet mit Migration, schreibgeschütztem Root-Dateisystem, Benutzer ohne root und erfolgreichem Healthcheck.
+- Interaktiver Admin-Bootstrap im isolierten Docker-Projekt erfolgreich, Passwort bei Eingabe verborgen.
 - Compose-Persistenztest: Testdatensatz nach vollständiger Container-Neuanlage erhalten; Health- und Frontendantwort jeweils HTTP 200, Laufzeit-UID 1000. Backup auch im schreibgeschützten Container erfolgreich.
 - Wiederherstellung einer lokalen Sicherung in ein leeres temporäres Ziel erfolgreich: Integrität, Foreign Keys und keine Kontoüberziehungen geprüft (5 Benutzer, 7 Buchungen, 10 Jahreskonten).
 - Konsistentes SQLite-Backup einschließlich Integritäts- und Foreign-Key-Prüfung erfolgreich erstellt. Sicherungen sind gitignored.
@@ -35,7 +36,7 @@ Die Messung umfasst HTTP, JSON und Datenbankzugriff bei lokalem Betrieb. Hardwar
 
 ## Automatisierte Browserprüfung in CI
 
-Drei Playwright-Tests sind eingerichtet: Buchung/Storno mit Kontoerstattung, Abteilungssichtbarkeit ohne Adminnavigation und mobiles Buchungsformular. Sie laufen mit gebautem Frontend auf einem isolierten Testserver und einer temporären Datenbank. Der GitHub-Workflow „Tests and lint“ führt sie neben Lint, Integrationstests, Build, Migration und Backup aus.
+Drei Playwright-Tests sind eingerichtet; bei der ersten CI-Ausführung wurde ein mehrdeutiger Testselektor für „Storniert“ korrigiert (Filteroption gegenüber Statusbadge). Die fachliche Buchung und Erstattung waren bereits erfolgreich. Getestet werden: Buchung/Storno mit Kontoerstattung, Abteilungssichtbarkeit ohne Adminnavigation und mobiles Buchungsformular. Sie laufen mit gebautem Frontend auf einem isolierten Testserver und einer temporären Datenbank. Der GitHub-Workflow „Tests and lint“ führt sie neben Lint, Integrationstests, Build, Migration und Backup aus.
 
 ## Betrieb und Grenzen
 
