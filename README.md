@@ -1,6 +1,6 @@
-Urlaubsplaner
+# Urlaubsplaner
 
-# Urlaub im Team planen und verwalten: mit Abteilungskalender, persönlichen Urlaubskonten und zentraler Mitarbeiterverwaltung.
+Urlaub im Team planen und verwalten: mit Abteilungskalender, persönlichen Urlaubskonten und zentraler Mitarbeiterverwaltung.
 
 ![Dashboard mit synthetischen Demodaten](docs/screenshots/dashboard.jpg)
 
