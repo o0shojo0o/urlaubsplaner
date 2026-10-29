@@ -1,4 +1,4 @@
-# freiraum. — Urlaubsplaner
+Urlaubsplaner
 
 Urlaub im Team planen und verwalten: mit Abteilungskalender, persönlichen Urlaubskonten und zentraler Mitarbeiterverwaltung.
 
