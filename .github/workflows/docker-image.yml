@@ -1,0 +1,169 @@
+name: Docker-Image bauen
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional: vorhandenes veröffentlichtes Release nachträglich bauen, z. B. v1.0.0'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.event_name }}-${{ github.event.pull_request.number || inputs.release_tag || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  docker:
+    # Keep this check name stable for branch protection and Dependabot auto-merge.
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Build-Ziel bestimmen
+        id: target
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          set -euo pipefail
+          ref="$GITHUB_SHA"
+          publish=false
+          latest=false
+          version=""
+          prerelease="${RELEASE_PRERELEASE:-false}"
+
+          if [[ "$GITHUB_EVENT_NAME" == release || ("$GITHUB_EVENT_NAME" == workflow_dispatch && -n "$RELEASE_TAG") ]]; then
+            if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" != refs/heads/main ]]; then
+              echo '::error::Release-Images können nur über den Workflow auf main nachgebaut werden.'
+              exit 1
+            fi
+            if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+([.-][A-Za-z0-9]+)*)?$ || ${#RELEASE_TAG} -gt 128 ]]; then
+              echo '::error::Release-Tag muss eine Docker-kompatible SemVer sein, z. B. v1.0.0.'
+              exit 1
+            fi
+            if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+              prerelease=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+                --jq 'if .draft then error("Release ist noch ein Entwurf") else .prerelease end')
+            fi
+            ref="refs/tags/$RELEASE_TAG"
+            version="$RELEASE_TAG"
+            publish=true
+            if [[ "$prerelease" == false && "$RELEASE_TAG" != *-* ]]; then latest=true; fi
+          elif [[ ("$GITHUB_EVENT_NAME" == push || "$GITHUB_EVENT_NAME" == workflow_dispatch) && "$GITHUB_REF" == refs/heads/main ]]; then
+            publish=true
+            latest=true
+          fi
+
+          {
+            echo "ref=$ref"
+            echo "publish=$publish"
+            echo "latest=$latest"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Quellcode laden
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.target.outputs.ref }}
+          persist-credentials: false
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        # Prisma and the native SQLite/Argon2 modules need their install scripts.
+        run: npm ci
+
+      - name: Prisma-Client generieren
+        run: npm run db:generate
+
+      - name: Code und Tests prüfen
+        run: |
+          npm run check
+          npm test
+
+      - name: Image-Namen und Tags bestimmen
+        id: image
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.target.outputs.version }}
+          TAG_LATEST: ${{ steps.target.outputs.latest }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          revision=$(git rev-parse HEAD)
+          version="${RELEASE_VERSION:-$revision}"
+          tags=("$image:$revision")
+          if [[ "$TAG_LATEST" == true ]]; then tags+=("$image:latest"); fi
+          if [[ -n "$RELEASE_VERSION" ]]; then
+            tags+=("$image:$RELEASE_VERSION")
+            if [[ "$RELEASE_VERSION" == v* ]]; then tags+=("$image:${RELEASE_VERSION#v}"); fi
+          fi
+          {
+            echo "name=$image"
+            echo "revision=$revision"
+            echo "version=$version"
+            echo 'tags<<IMAGE_TAGS'
+            printf '%s\n' "${tags[@]}"
+            echo 'IMAGE_TAGS'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Buildx einrichten
+        uses: docker/setup-buildx-action@v4
+
+      - name: Bei GitHub Container Registry anmelden
+        if: steps.target.outputs.publish == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image bauen und veröffentlichen
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ steps.target.outputs.publish == 'true' }}
+          tags: ${{ steps.image.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.image.outputs.revision }}
+            org.opencontainers.image.version=${{ steps.image.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Ergebnis zusammenfassen
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          IMAGE_TAGS: ${{ steps.image.outputs.tags }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          PUBLISHED: ${{ steps.target.outputs.publish }}
+        run: |
+          {
+            echo '## Docker-Image'
+            echo "Image: \`$IMAGE\`"
+            echo "Veröffentlicht: $PUBLISHED"
+            echo "Digest: \`$IMAGE_DIGEST\`"
+            echo ''
+            echo '### Tags'
+            printf '%s\n' "$IMAGE_TAGS" | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"

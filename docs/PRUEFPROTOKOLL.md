@@ -55,3 +55,10 @@ Die einzeln übernommenen Major-Upgrades verursachten einen Installationskonflik
 Erneut erfolgreich geprüft: reguläres `npm ci` ohne Peer-Workaround, konsistenter Paketbaum, Lint, alle 29 API-/SQLite-Tests, Frontend-Build und Docker-Build. Das Image startet als UID 1000 mit schreibgeschütztem Root-Dateisystem und flüchtiger Testdatenbank; Healthcheck und Oberfläche liefern HTTP 200 (Node v24.22.2). `npm audit` meldete zum Prüfzeitpunkt keine bekannten Sicherheitslücken.
 
 Dependabot ignoriert Major-Versionsupdates für FullCalendar, ESLint/`@eslint/js` und das Node-Basisimage. Minor-/Patch-Updates bleiben aktiv; FullCalendar- und ESLint-Pakete werden jeweils gemeinsam aktualisiert. Die übrigen übernommenen Updates, einschließlich Argon2 0.45.1 und der GitHub Actions, bleiben erhalten.
+
+
+## Docker-Veröffentlichung nach Tesla-Dashboard-Vorlage
+
+Der zuvor getrennte Build-/Release-Ablauf wird durch `.github/workflows/docker-image.yml` ersetzt. Wie in der Vorlage wird nach Tests auf `main` mit `GITHUB_TOKEN` nach GHCR veröffentlicht (`latest` und Commit-SHA). Releases erhalten zusätzlich Versions-Tags; bestehende veröffentlichte Releases können per manueller Eingabe `release_tag` nachgebaut werden. Pull Requests und Feature-Branches veröffentlichen nicht. Der Checkname `Docker build` bleibt für Branchschutz und Dependabot stabil.
+
+Zehn Ereignisfälle der Veröffentlichungsauswahl wurden lokal geprüft, darunter Pull Requests, Feature-Branches, main, manuelle Release-Nachbauten, Vorabversionen und ungültige Tags. Alle eingebetteten Bash-Skripte sind syntaktisch gültig. Die Produktionsanwendung und der Dockerfile werden durch diese Workflow-Änderung nicht verändert.

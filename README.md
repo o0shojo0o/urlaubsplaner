@@ -55,6 +55,24 @@ docker compose up -d --no-build
 
 Das ist ein lokaler Docker-Konfigurationsfehler; auf einem normal eingerichteten Docker-Host genügt der Schnellstart.
 
+## Fertige Images aus GHCR
+
+Nach erfolgreichem Workflow auf `main`:
+
+```sh
+docker pull ghcr.io/o0shojo0o/urlaubsplaner:latest
+```
+
+Für ein veröffentlichtes Release ist ein fester Versions-Tag vorgesehen:
+
+```sh
+docker pull ghcr.io/o0shojo0o/urlaubsplaner:v1.0.0
+```
+
+Der Workflow **Docker-Image bauen** veröffentlicht bei einem GitHub-Release automatisch dessen Quellcode. Ein bereits vorhandenes Release lässt sich unter **Actions → Docker-Image bauen → Run workflow** auf Branch `main` mit Eingabe `release_tag=v1.0.0` nachbauen. Ohne diese Eingabe baut ein manueller Lauf auf `main` den aktuellen Branchstand. Image-Tags, Digest und Veröffentlichungsstatus stehen in der Workflow-Zusammenfassung. Bei einem privaten GHCR-Paket ist vor dem Pull eine Registry-Anmeldung nötig; die Paketsichtbarkeit wird in den GitHub-Paketeinstellungen verwaltet.
+
+Die lokale `compose.yaml` verwendet weiterhin einen lokalen Build. Für einen Image-basierten Betrieb wird dort `image: ghcr.io/o0shojo0o/urlaubsplaner:v1.0.0` eingesetzt und `build: .` entfernt; Datenvolume, Umgebungsvariablen und Portkonfiguration bleiben erhalten.
+
 ## Entwicklung und Demo
 
 Node.js 24 LTS und npm verwenden. Prisma-CLI, Client und SQLite-Adapter sind gemeinsam auf 7.10.1 fixiert; das Lockfile fixiert alle weiteren Versionen.
@@ -142,7 +160,7 @@ Vor Updates Backup erstellen, dann `git pull` und `docker compose up -d --build`
 
 ## GitHub Actions und Dependabot
 
-- **Docker build:** Image-Build bei Pull Requests/Pushes und manuell; keine Registry-Veröffentlichung und kein automatisches Deployment.
+- **Docker build:** `.github/workflows/docker-image.yml` prüft Code/Tests und baut bei Pushes und Pull Requests. Auf `main` veröffentlicht er wie beim Tesla-Dashboard nach `ghcr.io/o0shojo0o/urlaubsplaner` mit `latest` und vollständiger Commit-SHA. Veröffentlichte Releases erhalten zusätzlich ihr Versions-Tag, z. B. `v1.0.0` und `1.0.0`. Vorabversionen bekommen kein `latest`. Pull Requests und andere Branches veröffentlichen keine Images. Die Registry-Anmeldung verwendet `GITHUB_TOKEN`; ein eigenes `ACCESS_TOKEN` ist nicht erforderlich.
 - **Tests and lint:** Lint, echte SQLite-Tests, Frontend-Build, Browser-E2E, Migration-/Backup-Smoke-Test und Abhängigkeitsprüfung unter Node 24.
 - **Dependabot:** GitHub Actions, npm-Workspaces und Docker-Basisimage, wöchentlich montags um 07:00 Uhr Europe/Berlin. Zusammengehörige Prisma-Pakete werden gemeinsam aktualisiert.
 - **Kompatibilitätsgrenzen:** FullCalendar bleibt gemeinsam auf Version 6, ESLint und `@eslint/js` auf Version 9, das Docker-Basisimage auf Node 24 LTS. Dependabot aktualisiert diese Pakete innerhalb der Versionsreihe; Major-Upgrades werden dafür unterdrückt und erst als geprüfte Migration vorgenommen. FullCalendar- und ESLint-Pakete werden jeweils zusammen aktualisiert.
