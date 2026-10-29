@@ -19,13 +19,26 @@ updates:
       time: '07:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Major migrations need coordinated code/plugin changes and are handled manually.
+    ignore:
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@fullcalendar/*'
+        update-types: ['version-update:semver-major']
     groups:
+      fullcalendar:
+        patterns: ['@fullcalendar/*']
+        update-types: [minor, patch]
+      eslint:
+        patterns: ['eslint', '@eslint/js']
+        update-types: [minor, patch]
       prisma:
         patterns: ['prisma', '@prisma/*']
         update-types: [minor, patch]
       frontend:
-        patterns:
-          ['react', 'react-dom', '@fullcalendar/*', '*vite*', 'tailwindcss', '@tailwindcss/*']
+        patterns: ['react', 'react-dom', '*vite*', 'tailwindcss', '@tailwindcss/*']
         update-types: [minor, patch]
   - package-ecosystem: docker
     directory: /
@@ -35,3 +48,7 @@ updates:
       time: '07:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Keep the production runtime aligned with the Node 24 CI lane.
+    ignore:
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']

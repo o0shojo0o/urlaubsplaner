@@ -47,3 +47,11 @@ Drei Playwright-Tests sind eingerichtet; bei der ersten CI-Ausführung wurde ein
 - Keine Krankheit, Betriebsferien-Sammelbuchung, E-Mail-Zustellung, SSO oder iCal in diesem Stand.
 - Der ursprüngliche Plan ist die fachliche Grundlage. Umgesetzte API-Pfade stehen in `openapi.yaml`; Arbeitsplanwechsel erfolgen durch einen neuen datierten Plan, Feiertagsjahre werden beim geprüften Speichern bestätigt. Tabellennamen sind gemappt; Prisma-Felder verwenden camelCase.
 - Monatlich geübte externe Wiederherstellung und die organisatorische Festlegung der Datenaufbewahrung bleiben laufende Betriebsaufgaben. Ein einmaliger lokaler Restore-Test ersetzt diese nicht.
+
+## Kompatibilitätskorrektur nach Dependabot-Updates
+
+Die einzeln übernommenen Major-Upgrades verursachten einen Installationskonflikt zwischen ESLint 10 und dem React-Lintplugin sowie einen unvollständigen FullCalendar-7-Umstieg. Korrigierter Stand: alle sechs FullCalendar-Pakete auf 6.1.22, ESLint und `@eslint/js` auf 9.39.5, beide Docker-Stufen auf Node 24 LTS. Der verbliebene verschachtelte FullCalendar-7-Eintrag wurde aus dem neu aufgelösten Lockfile entfernt.
+
+Erneut erfolgreich geprüft: reguläres `npm ci` ohne Peer-Workaround, konsistenter Paketbaum, Lint, alle 29 API-/SQLite-Tests, Frontend-Build und Docker-Build. Das Image startet als UID 1000 mit schreibgeschütztem Root-Dateisystem und flüchtiger Testdatenbank; Healthcheck und Oberfläche liefern HTTP 200 (Node v24.22.2). `npm audit` meldete zum Prüfzeitpunkt keine bekannten Sicherheitslücken.
+
+Dependabot ignoriert Major-Versionsupdates für FullCalendar, ESLint/`@eslint/js` und das Node-Basisimage. Minor-/Patch-Updates bleiben aktiv; FullCalendar- und ESLint-Pakete werden jeweils gemeinsam aktualisiert. Die übrigen übernommenen Updates, einschließlich Argon2 0.45.1 und der GitHub Actions, bleiben erhalten.
