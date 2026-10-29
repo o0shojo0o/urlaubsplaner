@@ -10,6 +10,6 @@ if [ "$(id -u)" = '0' ]; then
 fi
 
 # Repair owner access after dropping privileges; no extra chmod capability is needed.
-find /app/data -xdev -type d -exec chmod u+rwx {} +
-find /app/data -xdev -type f -exec chmod u+rw {} +
+find /app/data -xdev -type d ! -perm -0700 -exec chmod u+rwx {} \;
+find /app/data -xdev -type f ! -perm -0600 -exec chmod u+rw {} +
 exec "$@"
