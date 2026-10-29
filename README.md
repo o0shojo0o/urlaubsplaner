@@ -27,7 +27,7 @@ docker compose exec app npm run bootstrap
 
 Das Bootstrap-Kommando fragt Name, E-Mail und ein eigenes Passwort (mindestens 12 Zeichen, verdeckte Eingabe) ab. Es funktioniert nur, wenn noch kein Admin existiert. Keine Standardpasswörter, keine öffentliche Registrierung.
 
-Anschließend [http://localhost:3000](http://localhost:3000) öffnen. Im Adminbereich zuerst die Feiertage für den Hauptstandort und das benötigte Jahr eintragen und deren Vollständigkeit bestätigen. Danach Mitarbeiter anlegen und über **Zugangslink** einen persönlichen Einmallink erzeugen. Neue Mitarbeiter bekommen einen Wochenplan und das gewählte Jahreskonto.
+Anschließend [http://localhost:3000](http://localhost:3000) öffnen. Im Adminbereich zuerst den Feiertagskalender öffnen, Jahr und Bundesland wählen und **Online importieren** anklicken. Die Feiertage werden über feiertage-api.de geladen und ersetzen die Einträge im Formular. Örtliche Besonderheiten und die mitgelieferten Hinweise prüfen, bei Bedarf Einträge bearbeiten und anschließend die Vollständigkeit bestätigen. Zum Laden benötigt der Server Internetzugang; bei einem Fehler bleiben vorhandene Einträge erhalten. Danach Mitarbeiter anlegen und über **Zugangslink** einen persönlichen Einmallink erzeugen. Neue Mitarbeiter bekommen einen Wochenplan und das gewählte Jahreskonto.
 
 Daten liegen im benannten Volume `app-data`. `docker compose down` erhält die Daten. `docker compose down -v` entfernt das Volume und alle darin gespeicherten Daten.
 

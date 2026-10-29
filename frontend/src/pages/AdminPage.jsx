@@ -162,7 +162,8 @@ export function AdminPage({ page, year, notify, revision, settings, refreshUser 
           <div className="notice">
             <CalendarDays size={20} />
             Ein bestätigter Feiertagskalender ist Voraussetzung für Buchungen. Prüfe die Feiertage
-            für jeden Standort und jedes Jahr.
+            für jeden Standort und jedes Jahr. Über „Online importieren“ kannst du sie automatisch
+            laden.
           </div>
           <div className="section-toolbar">
             <h2>Standortkalender</h2>
@@ -691,6 +692,7 @@ function BalanceModal({ user, initialYear, onClose, onSaved }) {
             min={1900}
             max={9999}
             value={year}
+            disabled={busy}
             onChange={(e) => {
               setYear(Number(e.target.value));
               setClosePreview(null);
@@ -1015,7 +1017,28 @@ function ScheduleModal({ user, calendars, onClose, onSaved }) {
   );
 }
 
+const holidayRegions = {
+  NATIONAL: 'Deutschland · bundesweit',
+  BW: 'Baden-Württemberg',
+  BY: 'Bayern',
+  BE: 'Berlin',
+  BB: 'Brandenburg',
+  HB: 'Bremen',
+  HH: 'Hamburg',
+  HE: 'Hessen',
+  MV: 'Mecklenburg-Vorpommern',
+  NI: 'Niedersachsen',
+  NW: 'Nordrhein-Westfalen',
+  RP: 'Rheinland-Pfalz',
+  SL: 'Saarland',
+  SN: 'Sachsen',
+  ST: 'Sachsen-Anhalt',
+  SH: 'Schleswig-Holstein',
+  TH: 'Thüringen',
+};
 function HolidaysModal({ calendar, initialYear, onClose, onSaved }) {
+  const [region, setRegion] = useState(holidayRegions[calendar.code] ? calendar.code : 'NATIONAL');
+  const [importInfo, setImportInfo] = useState(null);
   const [year, setYear] = useState(initialYear),
     [rows, setRows] = useState(
       calendar.years
@@ -1075,9 +1098,11 @@ function HolidaysModal({ calendar, initialYear, onClose, onSaved }) {
             min={1900}
             max={9999}
             value={year}
+            disabled={busy}
             onChange={(e) => {
               const y = Number(e.target.value);
               setYear(y);
+              setImportInfo(null);
               setRows(
                 calendar.years
                   .find((v) => v.year === y)
@@ -1091,6 +1116,59 @@ function HolidaysModal({ calendar, initialYear, onClose, onSaved }) {
             }}
           />
         </Field>
+        <Field label="Bundesland für den Online-Import">
+          <select
+            value={region}
+            disabled={busy}
+            onChange={(e) => {
+              setRegion(e.target.value);
+              setImportInfo(null);
+            }}
+          >
+            {Object.entries(holidayRegions).map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <button
+          type="button"
+          className="button secondary"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError('');
+            try {
+              const result = await api(
+                `/admin/holiday-calendars/${calendar.id}/years/${year}/import?region=${region}`,
+              );
+              setRows(result.holidays);
+              setPreview(null);
+              setImportInfo(result);
+              setReason(`Online-Import ${holidayRegions[region]} ${year} geprüft`);
+            } catch (e) {
+              setError(e.message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {' '}
+          {busy ? 'Bitte warten …' : 'Online importieren'}{' '}
+        </button>
+        <small>
+          Der Import ersetzt die Einträge im Formular. Anschließend prüfen und speichern.
+        </small>
+        {importInfo && (
+          <div className="notice" role="status">
+            {importInfo.holidays.length} Feiertage geladen (feiertage-api.de). Örtliche
+            Besonderheiten bitte prüfen.
+            {importInfo.notes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+          </div>
+        )}
         <div className="holiday-rows">
           {rows.map((r, i) => (
             <div className="holiday-row" key={i}>

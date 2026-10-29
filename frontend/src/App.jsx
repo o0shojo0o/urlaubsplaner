@@ -24,6 +24,7 @@ import { Login } from './pages/Login.jsx';
 import { MyVacations } from './pages/MyVacations.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { AdminPage } from './pages/AdminPage.jsx';
+import { ThemeToggle } from './components/ThemeToggle.jsx';
 export default function App() {
   const [user, setUser] = useState(null),
     [settings, setSettings] = useState(null),
@@ -77,15 +78,18 @@ export default function App() {
     );
   if (!user || activation)
     return (
-      <Login
-        error={error}
-        activation={activation}
-        onActivated={() => {
-          setActivation(null);
-          history.replaceState(null, '', location.pathname);
-        }}
-        onLogin={load}
-      />
+      <>
+        <ThemeToggle className="login-theme-toggle" />
+        <Login
+          error={error}
+          activation={activation}
+          onActivated={() => {
+            setActivation(null);
+            history.replaceState(null, '', location.pathname);
+          }}
+          onLogin={load}
+        />
+      </>
     );
   const nav = [
     ['dashboard', LayoutDashboard, 'Übersicht'],
@@ -115,7 +119,7 @@ export default function App() {
           <span className="brand-mark">
             <Leaf size={22} />
           </span>
-          freiraum<span className="brand-dot">.</span>
+          Urlaubsplaner
         </a>
         <div className="workspace">
           <span className="workspace-logo">{initials(settings.companyName)}</span>
@@ -196,6 +200,7 @@ export default function App() {
             <strong>{title}</strong>
           </div>
           <div className="topbar-right">
+            <ThemeToggle />
             <span className="live-status">
               <span className="online-dot" />
               Mit dem Team verbunden
@@ -209,7 +214,7 @@ export default function App() {
               <p className="eyebrow">{fmt(now(), { weekday: 'long', year: 'numeric' })}</p>
               <h1>
                 {page === 'dashboard'
-                  ? `Hallo ${user.displayName.split(' ')[0]}, Zeit für Freiraum.`
+                  ? `Hallo ${user.displayName.split(' ')[0]}, Zeit für deine Urlaubsplanung.`
                   : title}
                 <span className="heading-dot">{page === 'dashboard' ? ' ☀' : '.'}</span>
               </h1>
@@ -288,7 +293,7 @@ export default function App() {
             )}
           <footer className="page-footer">
             <span>
-              <Leaf size={13} /> freiraum · Zusammen gut geplant.
+              <Leaf size={13} /> Urlaubsplaner · Zusammen gut geplant.
             </span>
             <span>
               {user.department.name} <span className="footer-dot">·</span>{' '}

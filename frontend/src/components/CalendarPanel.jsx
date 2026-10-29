@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Printer } from 'lucide-react';
 import { api, allPages } from '../api.js';
 import { now, add, fmt, days, months, weekdays } from '../lib/format.js';
 import { ErrorBox, Loading } from './ui.jsx';
@@ -14,10 +14,27 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
   const ref = useRef(null),
     [title, setTitle] = useState(''),
     [view, setView] = useState('dayGridMonth'),
+    [printing, setPrinting] = useState(false),
     [departmentId, setDepartmentId] = useState(''),
     [departments, setDepartments] = useState([]),
     [range, setRange] = useState(null),
     [calendarError, setCalendarError] = useState('');
+  useEffect(() => {
+    const beforePrint = () => {
+      flushSync(() => setPrinting(true));
+      ref.current?.getApi().updateSize();
+    };
+    const afterPrint = () => {
+      setPrinting(false);
+      requestAnimationFrame(() => ref.current?.getApi().updateSize());
+    };
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint', afterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', beforePrint);
+      window.removeEventListener('afterprint', afterPrint);
+    };
+  }, []);
   useEffect(() => {
     if (user.role === 'ADMIN' && !compact)
       api('/admin/departments')
@@ -43,15 +60,20 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
     ]);
     return { items, holidays };
   }, [range?.start, range?.end, revision, departmentId]);
+  const holidayClassNames = (info) => {
+    const date = `${info.date.getFullYear()}-${String(info.date.getMonth() + 1).padStart(2, '0')}-${String(info.date.getDate()).padStart(2, '0')}`;
+    return data?.holidays.some((h) => h.date === date) ? ['calendar-holiday'] : [];
+  };
   const events = (data?.items || []).map((v) => ({
     id: v.id,
     title: `${v.displayName}${v.startPart !== 'FULL' || v.endPart !== 'FULL' ? ' · ½' : ''}`,
     start: v.startDate,
     end: add(v.endDate, 1),
     allDay: true,
-    backgroundColor: `${v.color}16`,
-    borderColor: 'transparent',
-    textColor: v.color,
+    backgroundColor: v.color,
+    borderColor: v.color,
+    textColor: '#ffffff',
+    classNames: ['leave-event'],
     extendedProps: v,
   }));
   events.push(
@@ -62,7 +84,7 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
       end: add(h.date, 1),
       allDay: true,
       display: 'background',
-      backgroundColor: '#dce8dc',
+      backgroundColor: '#287fb6',
       extendedProps: { holiday: true },
     })),
   );
@@ -125,15 +147,15 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
           )}
         </div>
         <div className="view-tabs">
+          <button className="calendar-print" onClick={() => window.print()}>
+            <Printer size={15} />
+            Drucken
+          </button>
           {(compact
-            ? [
-                ['dayGridMonth', 'Monat'],
-                ['listMonth', 'Liste'],
-              ]
+            ? [['dayGridMonth', 'Monat']]
             : [
                 ['dayGridMonth', 'Monat'],
                 ['timeGridWeek', 'Woche'],
-                ['listMonth', 'Liste'],
                 ['year', 'Jahr'],
               ]
           ).map(([value, label]) => (
@@ -162,7 +184,7 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
         <div className="calendar-body">
           <FullCalendar
             ref={ref}
-            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             locale={deLocale}
             initialView={view === 'year' ? 'dayGridMonth' : view}
             initialDate={year === Number(now().slice(0, 4)) ? now() : `${year}-01-01`}
@@ -175,8 +197,14 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
             slotMaxTime="18:00:00"
             selectable
             selectMirror
-            dayMaxEvents={3}
+            dayMaxEvents={printing ? false : 3}
             events={events}
+            dayCellClassNames={holidayClassNames}
+            dayHeaderClassNames={holidayClassNames}
+            eventDidMount={(info) => {
+              if (!info.event.extendedProps.holiday)
+                info.el.style.setProperty('--leave-color', info.event.backgroundColor);
+            }}
             datesSet={(info) => {
               setTitle(info.view.title);
               setRange({ start: info.startStr.slice(0, 10), end: info.endStr.slice(0, 10) });
@@ -203,13 +231,10 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
           />
         </div>
       )}
-      <div className="calendar-legend">
+      <div className="calendar-legend" style={{ flexWrap: 'wrap' }}>
+        {view !== 'year' && <EmployeeLegend events={data?.items || []} />}
         <span>
-          <i style={{ background: '#0d9488' }} />
-          Urlaub
-        </span>
-        <span>
-          <i style={{ background: '#dce8dc' }} />
+          <i style={{ background: '#e2e2e2' }} />
           Feiertag
         </span>
         <span className="legend-help">
@@ -221,52 +246,124 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
   );
 }
 
-function YearGrid({ year, revision, departmentId, onSelect }) {
-  const [events, error] = useData(
-    () =>
-      allPages(
-        `/calendar?start=${year}-01-01&endExclusive=${year + 1}-01-01${departmentId ? `&departmentId=${departmentId}` : ''}`,
-      ),
-    [year, revision, departmentId],
+function EmployeeLegend({ events }) {
+  const employees = [...new Map(events.map((v) => [v.userId, v])).values()].sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, 'de'),
   );
-  if (!events && !error) return <Loading />;
+  return employees.map((employee) => (
+    <span key={employee.userId}>
+      <i style={{ background: employee.color }} />
+      {employee.displayName}
+    </span>
+  ));
+}
+
+function YearGrid({ year, revision, departmentId, onSelect }) {
+  const [data, error] = useData(async () => {
+    const range = `start=${year}-01-01&endExclusive=${year + 1}-01-01`;
+    const [events, holidays] = await Promise.all([
+      allPages(`/calendar?${range}${departmentId ? `&departmentId=${departmentId}` : ''}`),
+      api(`/holidays?${range}`),
+    ]);
+    return { events, holidays };
+  }, [year, revision, departmentId]);
+  const monthLanes = months.map((_, m) => {
+    const start = `${year}-${String(m + 1).padStart(2, '0')}-01`;
+    const end = `${year}-${String(m + 1).padStart(2, '0')}-${new Date(Date.UTC(year, m + 1, 0)).getUTCDate()}`;
+    const laneEnds = [];
+    return (data?.events || [])
+      .filter((v) => v.startDate <= end && v.endDate >= start)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate) || a.id.localeCompare(b.id))
+      .map((v) => {
+        let lane = laneEnds.findIndex((last) => last < v.startDate);
+        if (lane === -1) lane = laneEnds.length;
+        laneEnds[lane] = v.endDate;
+        return {
+          ...v,
+          lane,
+          visibleStart: v.startDate < start ? start : v.startDate,
+          visibleEnd: v.endDate > end ? end : v.endDate,
+        };
+      });
+  });
+  if (!data && !error) return <Loading />;
   return (
     <>
       <ErrorBox error={error} />
-      <div className="year-grid">
-        {months.map((month, m) => {
-          const start = `${year}-${String(m + 1).padStart(2, '0')}-01`;
-          const count = new Date(year, m + 1, 0).getDate();
-          const offset = (new Date(`${start}T12:00:00Z`).getUTCDay() + 6) % 7;
-          return (
-            <div className="mini-month" key={m}>
-              <h3>{month}</h3>
-              <div className="mini-days">
-                {weekdays.map((d) => (
-                  <small key={d}>{d[0]}</small>
-                ))}
-                {Array.from({ length: offset }, (_, i) => (
-                  <span key={`e${i}`} />
-                ))}
-                {Array.from({ length: count }, (_, i) => {
+      <div
+        className="annual-calendar-scroll"
+        role="region"
+        aria-label={`Jahreskalender ${year}`}
+        tabIndex={0}
+      >
+        <table className="annual-calendar">
+          <thead>
+            <tr>
+              {months.map((month) => (
+                <th scope="col" key={month}>
+                  <h3>{month}</h3>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 31 }, (_, i) => (
+              <tr key={i}>
+                {months.map((month, m) => {
+                  const count = new Date(Date.UTC(year, m + 1, 0)).getUTCDate();
+                  if (i >= count) return <td className="annual-invalid" key={month} />;
                   const day = `${year}-${String(m + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
-                  const booked =
-                    events?.filter((v) => v.startDate <= day && v.endDate >= day) || [];
+                  const weekday = (new Date(`${day}T12:00:00Z`).getUTCDay() + 6) % 7;
+                  const booked = monthLanes[m].filter(
+                    (v) => v.startDate <= day && v.endDate >= day,
+                  );
+                  const holidays = data?.holidays.filter((h) => h.date === day) || [];
+                  const description = [
+                    fmt(day, { weekday: 'long', year: 'numeric' }),
+                    ...holidays.map((h) => h.name),
+                    ...booked.map((v) => v.displayName),
+                  ].join(' · ');
                   return (
-                    <button
-                      key={day}
-                      className={`${booked.length ? 'has-leave' : ''} ${day === now() ? 'is-today' : ''}`}
-                      title={`${fmt(day)}${booked.length ? `: ${booked.map((v) => v.displayName).join(', ')}` : ''}`}
-                      onClick={() => onSelect(day)}
+                    <td
+                      key={month}
+                      className={`${weekday >= 5 ? 'annual-weekend' : ''} ${weekday === 6 ? 'annual-sunday' : ''} ${holidays.length ? 'annual-holiday' : ''}`}
                     >
-                      {i + 1}
-                    </button>
+                      <button
+                        className={`annual-day ${booked.length ? 'annual-booked' : ''} ${day === now() ? 'annual-today' : ''}`}
+                        title={description}
+                        aria-label={description}
+                        aria-current={day === now() ? 'date' : undefined}
+                        onClick={() => onSelect(day)}
+                      >
+                        <span>{String(i + 1).padStart(2, '0')}</span>
+                        <small>{weekdays[weekday]}</small>
+                        <span className="annual-markers" aria-hidden="true">
+                          {booked.map((v) => (
+                            <i key={v.id} style={{ background: v.color, left: `${v.lane * 17}px` }}>
+                              {day === v.visibleStart && (
+                                <span
+                                  className="annual-leave-name"
+                                  style={{
+                                    height: `${(Math.round((Date.parse(v.visibleEnd) - Date.parse(v.visibleStart)) / 86400000) + 1) * 28 - 4}px`,
+                                  }}
+                                >
+                                  {v.displayName}
+                                </span>
+                              )}
+                            </i>
+                          ))}
+                        </span>
+                      </button>
+                    </td>
                   );
                 })}
-              </div>
-            </div>
-          );
-        })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="calendar-legend" style={{ flexWrap: 'wrap' }}>
+        <EmployeeLegend events={data?.events || []} />
       </div>
     </>
   );

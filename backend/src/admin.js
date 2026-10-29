@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { importHolidays, holidayRegions } from './holiday-import.js';
 import { z } from 'zod';
 import argon2 from 'argon2';
 import { db } from './db.js';
@@ -474,6 +475,14 @@ export function adminRoutes() {
       }),
     ),
   );
+  r.get('/holiday-import/regions', (req, res) => res.json(holidayRegions));
+  r.get('/holiday-calendars/:id/years/:year/import', async (req, res) => {
+    const y = year.parse(req.params.year);
+    const region = z.enum(Object.keys(holidayRegions)).parse(req.query.region);
+    if (!(await db.holidayCalendar.findUnique({ where: { id: req.params.id } })))
+      fail(404, 'NOT_FOUND', 'Feiertagskalender nicht gefunden.');
+    res.json(await importHolidays(y, region));
+  });
   r.post('/holiday-calendars', async (req, res) => {
     const input = z
       .object({ code: z.string().trim().min(2).max(30), name: z.string().trim().min(2).max(100) })

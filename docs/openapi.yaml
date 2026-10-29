@@ -3972,6 +3972,94 @@
           }
         }
       }
+    },
+    "/admin/holiday-import/regions": {
+      "get": {
+        "summary": "Verfügbare deutsche Bundesländer für den Online-Import",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Kürzel und Namen der Bundesländer"
+          },
+          "403": {
+            "description": "Adminrechte erforderlich"
+          }
+        }
+      }
+    },
+    "/admin/holiday-calendars/{id}/years/{year}/import": {
+      "get": {
+        "summary": "Feiertage online laden (ohne Speicherung)",
+        "tags": [
+          "Administration"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 9999
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "NATIONAL",
+                "BW",
+                "BY",
+                "BE",
+                "BB",
+                "HB",
+                "HH",
+                "HE",
+                "MV",
+                "NI",
+                "NW",
+                "RP",
+                "SL",
+                "SN",
+                "ST",
+                "SH",
+                "TH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feiertage mit Datum, Name und blockedSlots=FULL sowie regionale Hinweise"
+          },
+          "400": {
+            "description": "Ungültige Parameter"
+          },
+          "403": {
+            "description": "Adminrechte erforderlich"
+          },
+          "404": {
+            "description": "Kalender nicht gefunden"
+          },
+          "502": {
+            "description": "Online-Quelle nicht erreichbar oder ungültige Antwort"
+          }
+        }
+      }
     }
   },
   "components": {

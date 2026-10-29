@@ -7,13 +7,17 @@ import { VacationTable } from '../components/VacationTable.jsx';
 import { CalendarPanel } from '../components/CalendarPanel.jsx';
 import { useData } from '../hooks/useData.js';
 export function Dashboard({ user, year, revision, openBooking, navigate }) {
-  const [data, error] = useData(async () => {
-    const [balance, vacations] = await Promise.all([
-      api(`/me/balances?year=${year}`),
-      allPages(`/me/vacations?year=${year}&status=BOOKED`),
-    ]);
-    return { balance, vacations };
-  }, [year, revision]);
+  const [data, error] = useData(
+    async () => {
+      const [balance, vacations] = await Promise.all([
+        api(`/me/balances?year=${year}`),
+        allPages(`/me/vacations?year=${year}&status=BOOKED`),
+      ]);
+      return { balance, vacations };
+    },
+    [year, revision],
+    { keepPreviousData: true },
+  );
   if (error) return <ErrorBox error={error} />;
   if (!data) return <Loading />;
   const next = data.vacations

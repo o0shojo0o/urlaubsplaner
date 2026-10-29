@@ -15,7 +15,7 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
           <span className="brand-mark">
             <Leaf />
           </span>
-          freiraum.
+          Urlaubsplaner
         </a>
         <div className="login-art-copy">
           <span className="pill">WENIGER ORGANISIEREN. MEHR ERHOLEN.</span>
@@ -35,7 +35,7 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
       </section>
       <section className="login-form">
         <div className="mobile-brand brand">
-          <Leaf /> freiraum.
+          <Leaf /> Urlaubsplaner
         </div>
         <div className="login-card">
           <p className="eyebrow">DEIN TEAM. DEINE AUSZEIT.</p>
@@ -43,7 +43,7 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
           <p>
             {activation
               ? 'Lege dein persönliches Passwort fest.'
-              : 'Melde dich an und plane deinen nächsten Freiraum.'}
+              : 'Melde dich an und plane deinen nächsten Urlaub.'}
           </p>
           <ErrorBox error={error || externalError} />
           {done ? (

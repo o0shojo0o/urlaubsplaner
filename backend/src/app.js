@@ -29,6 +29,7 @@ import {
   vacationInclude,
 } from './vacations.js';
 import { adminRoutes } from './admin.js';
+import { employeeColor } from './employee-colors.js';
 export function createApp({ rateLimits = true } = {}) {
   const app = express();
   app.disable('x-powered-by');
@@ -169,13 +170,14 @@ export function createApp({ rateLimits = true } = {}) {
     res.json({
       items: items.map((v) => ({
         id: v.id,
+        userId: v.userId,
         displayName: v.user.displayName,
         departmentName: v.user.department.name,
         startDate: v.startDate,
         endDate: v.endDate,
         startPart: v.startPart,
         endPart: v.endPart,
-        color: v.user.department.color,
+        color: employeeColor(v.userId),
         own: v.userId === req.user.id,
         units: v.days.reduce((n, d) => n + d.units, 0),
       })),

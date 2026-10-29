@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-export function useData(loader, dependencies) {
+export function useData(loader, dependencies, { keepPreviousData = false } = {}) {
   const [data, setData] = useState(null),
     [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    setData(null);
+    if (!keepPreviousData) setData(null);
     setError('');
     Promise.resolve()
       .then(loader)
