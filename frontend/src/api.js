@@ -1,3 +1,4 @@
+import { createRequestKey } from './lib/requestKey.js';
 let csrfToken;
 export async function initCsrf() {
   const res = await fetch('/api/v1/auth/csrf');
@@ -14,7 +15,7 @@ export async function api(path, options = {}) {
     headers: {
       'Content-Type': 'application/json',
       ...(method !== 'GET'
-        ? { 'X-CSRF-Token': csrfToken, 'Idempotency-Key': options.key || crypto.randomUUID() }
+        ? { 'X-CSRF-Token': csrfToken, 'Idempotency-Key': options.key || createRequestKey() }
         : {}),
     },
     ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),

@@ -1,3 +1,4 @@
+import { createRequestKey } from '../lib/requestKey.js';
 import { useEffect, useRef, useState } from 'react';
 import { Sun, CheckCircle2, ArrowRight } from 'lucide-react';
 import { api, allPages, send } from '../api.js';
@@ -18,7 +19,7 @@ export function BookingModal({ initial, user, onClose, onSaved }) {
     [preview, setPreview] = useState(null),
     [busy, setBusy] = useState(false),
     [users, setUsers] = useState([]);
-  const requestKey = useRef(crypto.randomUUID());
+  const requestKey = useRef(createRequestKey());
   useEffect(() => {
     if (initial.id)
       api(`/vacations/${initial.id}`)
@@ -51,7 +52,7 @@ export function BookingModal({ initial, user, onClose, onSaved }) {
     });
     setPreview(null);
     setError('');
-    requestKey.current = crypto.randomUUID();
+    requestKey.current = createRequestKey();
   };
   const payload = () => ({
     ...form,
