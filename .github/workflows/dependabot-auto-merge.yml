@@ -53,7 +53,8 @@ jobs:
                 ;;
               success)
                 required_count=$(gh pr checks "$PR_NUMBER" --required --json name --jq length || echo 0)
-                if [[ "$required_count" =~ ^[1-9][0-9]*$ ]] && gh pr checks "$PR_NUMBER" --required; then
+                quality_state=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Tests and lint" and .app.slug == "github-actions")] | sort_by(.id) | last | .conclusion // "missing"')
+                if [[ "$quality_state" == success && "$required_count" =~ ^[1-9][0-9]*$ ]] && gh pr checks "$PR_NUMBER" --required; then
                   gh pr merge "$PR_NUMBER" --auto --squash --match-head-commit "$HEAD_SHA"
                   exit 0
                 fi

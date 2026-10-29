@@ -1,0 +1,4189 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Freiraum – Urlaubsplaner API",
+    "version": "1.0.0",
+    "description": "Date-only-Fachdaten, UTC-Zeitpunkte. Alle Kontomengen in ganzzahligen Halbtagseinheiten (2 = 1 Tag). Adminrouten benötigen ADMIN. Mitarbeiterkalender ist serverseitig auf die aktuelle Abteilung beschränkt. Schreibzugriffe benötigen CSRF und passende Origin. Vorschauen sind unverbindlich."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "sessionCookie": []
+    },
+    {
+      "secureSessionCookie": []
+    }
+  ],
+  "paths": {
+    "/auth/csrf": {
+      "get": {
+        "summary": "Voranmelde-/Session-CSRF-Token abrufen",
+        "tags": [
+          "Anmeldung"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Mit E-Mail und Passwort anmelden",
+        "tags": [
+          "Anmeldung"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Sitzung beenden",
+        "tags": [
+          "Anmeldung"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/activate": {
+      "post": {
+        "summary": "Einmaligen Aktivierungs-/Resetlink verwenden",
+        "tags": [
+          "Anmeldung"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "token",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Einmaligen Aktivierungs-/Resetlink verwenden",
+        "tags": [
+          "Anmeldung"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "token",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "summary": "Passwort ändern; alle Sitzungen beenden",
+        "tags": [
+          "Anmeldung"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "oldPassword": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "oldPassword",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Eigenes Profil und Firmenkonfiguration",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/me/work-schedules": {
+      "get": {
+        "summary": "Eigene Arbeitspläne",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/me/balances": {
+      "get": {
+        "summary": "Eigene Jahreskonten und Guthabenquellen",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Date"
+            }
+          }
+        ]
+      }
+    },
+    "/me/vacations": {
+      "get": {
+        "summary": "Eigene Urlaubsbuchungen",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "BOOKED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/calendar": {
+      "get": {
+        "summary": "Teamkalender (Mitarbeiter nur eigene aktuelle Abteilung)",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Date"
+            }
+          },
+          {
+            "name": "endExclusive",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Date"
+            }
+          },
+          {
+            "name": "departmentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ]
+      }
+    },
+    "/holidays": {
+      "get": {
+        "summary": "Für eigene Arbeitspläne relevante Feiertage",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Date"
+            }
+          },
+          {
+            "name": "endExclusive",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Date"
+            }
+          }
+        ]
+      }
+    },
+    "/vacations/preview": {
+      "post": {
+        "summary": "Urlaub unverbindlich berechnen",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "startDate",
+                  "endDate"
+                ],
+                "properties": {
+                  "startDate": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "endDate": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "startPart": {
+                    "type": "string",
+                    "enum": [
+                      "FULL",
+                      "AM",
+                      "PM"
+                    ],
+                    "default": "FULL"
+                  },
+                  "endPart": {
+                    "type": "string",
+                    "enum": [
+                      "FULL",
+                      "AM",
+                      "PM"
+                    ],
+                    "default": "FULL"
+                  },
+                  "privateNote": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "Nur Admin: Zielmitarbeiter."
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500,
+                    "description": "Bei fremden/rückwirkenden Adminänderungen erforderlich."
+                  },
+                  "vacationId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vacations": {
+      "post": {
+        "summary": "Urlaub direkt verbindlich buchen",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "201": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Booking"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vacations/{id}": {
+      "get": {
+        "summary": "Detail: nur Eigentümer oder Admin",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Urlaub atomar ändern",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "startDate",
+                  "endDate",
+                  "version"
+                ],
+                "properties": {
+                  "startDate": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "endDate": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "startPart": {
+                    "type": "string",
+                    "enum": [
+                      "FULL",
+                      "AM",
+                      "PM"
+                    ],
+                    "default": "FULL"
+                  },
+                  "endPart": {
+                    "type": "string",
+                    "enum": [
+                      "FULL",
+                      "AM",
+                      "PM"
+                    ],
+                    "default": "FULL"
+                  },
+                  "privateNote": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "Nur Admin: Zielmitarbeiter."
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500,
+                    "description": "Bei fremden/rückwirkenden Adminänderungen erforderlich."
+                  },
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vacations/{id}/cancel": {
+      "post": {
+        "summary": "Urlaub stornieren und Guthaben freigeben",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "summary": "Mitarbeiter auflisten",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Mitarbeiter mit Plan und Jahreskonto anlegen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "201": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "departmentId": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "EMPLOYEE",
+                      "ADMIN"
+                    ]
+                  },
+                  "employmentStart": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "employmentEnd": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "calendarId": {
+                    "type": "string"
+                  },
+                  "workdays": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 7
+                    },
+                    "minItems": 1,
+                    "maxItems": 7
+                  },
+                  "allowanceUnits": {
+                    "type": "integer"
+                  },
+                  "year": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "email",
+                  "displayName",
+                  "departmentId",
+                  "role",
+                  "employmentStart",
+                  "employmentEnd",
+                  "calendarId",
+                  "workdays",
+                  "allowanceUnits",
+                  "year"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}": {
+      "get": {
+        "summary": "Mitarbeiterdetails",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Mitarbeiter bearbeiten, Sitzungen widerrufen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "departmentId": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "EMPLOYEE",
+                      "ADMIN"
+                    ]
+                  },
+                  "employmentStart": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "employmentEnd": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  },
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "email",
+                  "displayName",
+                  "departmentId",
+                  "role",
+                  "employmentStart",
+                  "employmentEnd",
+                  "isActive",
+                  "version",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/activation-token": {
+      "post": {
+        "summary": "Einmaligen Zugangslink erzeugen; Klartext nur in Antwort",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/password-reset-token": {
+      "post": {
+        "summary": "Einmaligen Zugangslink erzeugen; Klartext nur in Antwort",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/revoke-sessions": {
+      "post": {
+        "summary": "Alle Sitzungen widerrufen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/departments": {
+      "get": {
+        "summary": "Abteilungen auflisten",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      },
+      "post": {
+        "summary": "Abteilung speichern",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "color"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/departments/{id}": {
+      "patch": {
+        "summary": "Abteilung speichern",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "color"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/holiday-calendars": {
+      "get": {
+        "summary": "Standortkalender mit Feiertagsjahren",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      },
+      "post": {
+        "summary": "Standortkalender anlegen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "201": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "name"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/holiday-calendars/{id}/years/{year}/preview": {
+      "post": {
+        "summary": "Feiertagsänderung prüfen; Transaktion zurückrollen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "holidays": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Holiday"
+                    },
+                    "maxItems": 100
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  },
+                  "previewHash": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "holidays",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/holiday-calendars/{id}/years/{year}": {
+      "put": {
+        "summary": "Feiertage bestätigen und zukünftige Buchungen atomar neu berechnen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "holidays": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Holiday"
+                    },
+                    "maxItems": 100
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  },
+                  "previewHash": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "holidays",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/work-schedules": {
+      "get": {
+        "summary": "Arbeitspläne auflisten",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Arbeitsplan hinzufügen und Urlaub neu berechnen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "validFrom": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "validTo": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "calendarId": {
+                    "type": "string"
+                  },
+                  "workdays": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 7
+                    },
+                    "minItems": 1,
+                    "maxItems": 7
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  },
+                  "previewHash": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "validFrom",
+                  "calendarId",
+                  "workdays",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/work-schedules/preview": {
+      "post": {
+        "summary": "Auswirkung eines neuen Arbeitsplans prüfen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "validFrom": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "validTo": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "calendarId": {
+                    "type": "string"
+                  },
+                  "workdays": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 7
+                    },
+                    "minItems": 1,
+                    "maxItems": 7
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  },
+                  "previewHash": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "validFrom",
+                  "calendarId",
+                  "workdays",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/balances": {
+      "get": {
+        "summary": "Jahreskonto eines Mitarbeiters",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Date"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Jahreskonto anlegen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "201": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "year": {
+                    "type": "integer"
+                  },
+                  "allowanceUnits": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "year",
+                  "allowanceUnits",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/balances/{id}/adjustments": {
+      "post": {
+        "summary": "Guthaben begründet korrigieren (Halbtagseinheiten)",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "units": {
+                    "type": "integer"
+                  },
+                  "validFrom": {
+                    "$ref": "#/components/schemas/Date"
+                  },
+                  "expiresOn": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "version",
+                  "units",
+                  "validFrom",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/balances/{id}/close-preview": {
+      "post": {
+        "summary": "Jahresabschluss und übertragbare Tage prüfen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "carryover": {
+                    "type": "boolean"
+                  },
+                  "expiresOn": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "version",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/balances/{id}/close": {
+      "post": {
+        "summary": "Jahr schließen und optional einmalig übertragen",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "$ref": "#/components/schemas/Version"
+                  },
+                  "carryover": {
+                    "type": "boolean"
+                  },
+                  "expiresOn": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "version",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/audit-logs": {
+      "get": {
+        "summary": "Änderungsprotokoll",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "entityId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectUserId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/settings": {
+      "get": {
+        "summary": "Firmenkonfiguration",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Firmenkonfiguration ändern",
+        "tags": [
+          "Administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          },
+          {
+            "secureSessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Muss APP_ORIGIN entsprechen."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "companyName": {
+                    "type": "string"
+                  },
+                  "defaultAllowanceUnits": {
+                    "type": "integer"
+                  },
+                  "maxBookingDays": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "companyName",
+                  "defaultAllowanceUnits",
+                  "maxBookingDays"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi": {
+      "get": {
+        "summary": "Diesen API-Vertrag abrufen",
+        "tags": [
+          "Urlaub"
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreich",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "urlaubsplaner_dev"
+      },
+      "secureSessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-session"
+      },
+      "csrfToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token"
+      }
+    },
+    "schemas": {
+      "Date": {
+        "type": "string",
+        "format": "date",
+        "example": "2027-07-12"
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "startDate",
+          "endDate"
+        ],
+        "properties": {
+          "startDate": {
+            "$ref": "#/components/schemas/Date"
+          },
+          "endDate": {
+            "$ref": "#/components/schemas/Date"
+          },
+          "startPart": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "AM",
+              "PM"
+            ],
+            "default": "FULL"
+          },
+          "endPart": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "AM",
+              "PM"
+            ],
+            "default": "FULL"
+          },
+          "privateNote": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "userId": {
+            "type": "string",
+            "description": "Nur Admin: Zielmitarbeiter."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500,
+            "description": "Bei fremden/rückwirkenden Adminänderungen erforderlich."
+          }
+        }
+      },
+      "Version": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "Holiday": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "date",
+          "name"
+        ],
+        "properties": {
+          "date": {
+            "$ref": "#/components/schemas/Date"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "blockedSlots": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "AM",
+              "PM"
+            ],
+            "default": "FULL"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Error400": {
+        "description": "Ungültige Eingabe",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error401": {
+        "description": "Nicht angemeldet",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error403": {
+        "description": "Keine Berechtigung oder ungültiger CSRF-/Origin-Nachweis",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error404": {
+        "description": "Nicht vorhanden oder nicht zugänglich",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error409": {
+        "description": "Fachlicher Konflikt oder veraltete Version",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error422": {
+        "description": "Unzulässige Fachkonfiguration",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error429": {
+        "description": "Rate-Limit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error503": {
+        "description": "Datenbank ausgelastet",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

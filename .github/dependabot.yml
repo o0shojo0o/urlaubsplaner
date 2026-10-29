@@ -10,15 +10,28 @@ updates:
     open-pull-requests-limit: 5
     groups:
       actions-nonbreaking:
-        update-types:
-          - minor
-          - patch
-# Mit den jeweiligen Manifesten aktivieren:
-#  - package-ecosystem: npm
-#    directory: /
-#    schedule:
-#      interval: weekly
-#  - package-ecosystem: docker
-#    directory: /
-#    schedule:
-#      interval: weekly
+        update-types: [minor, patch]
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    groups:
+      prisma:
+        patterns: ['prisma', '@prisma/*']
+        update-types: [minor, patch]
+      frontend:
+        patterns:
+          ['react', 'react-dom', '@fullcalendar/*', '*vite*', 'tailwindcss', '@tailwindcss/*']
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5

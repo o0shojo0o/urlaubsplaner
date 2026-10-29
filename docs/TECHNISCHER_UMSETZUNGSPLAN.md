@@ -1,6 +1,6 @@
 # Technischer Umsetzungsplan – Urlaubsplaner
 
-Stand: 29. Oktober 2026. Status: Projektgrundlage, noch keine implementierte Anwendung.
+Stand: 29. Oktober 2026. Status: Architekturgrundlage; eine erste lauffähige Implementierung ist vorhanden. Den tatsächlich geprüften Stand dokumentieren README und PRUEFPROTOKOLL.md.
 
 ## 1. Ziel und verbindliche Architektur
 
@@ -455,4 +455,4 @@ Phasen 1–7 und sämtliche Akzeptanzkriterien sind erfüllt. CI führt Lint, Un
 
 Die GitHub-Konfiguration liegt bereits unter `.github/`: Docker-Build für Pushes/Pull Requests und manuelle Starts; wöchentliche Dependabot-Updates für Actions; automatischer Squash-Merge verifizierter Patch-/Minor-Updates nach erfolgreichem Docker-Check und allen verpflichtenden Branchchecks. Major-Updates bleiben manuell. Es wird kein fremder PR-Code im privilegierten Merge-Workflow ausgeführt.
 
-Der Build ist bis zur Implementierung des Dockerfiles bewusst rot. npm- und Docker-Updatequellen werden aktiviert, sobald Lockfile und Dockerfile vorhanden sind. Phase 1 ergänzt Lint und Tests; Phase 7 prüft den produktiven Container. Erst mit diesen verpflichtenden Checks sind auch App-Abhängigkeiten für den Auto-Merge vorgesehen. Einrichtung der Repository-Regeln siehe README. CI baut aktuell nur ein Image; Registry-Push und Deployment sind separate Erweiterungen.
+Dockerfile, Lockfile, npm-/Docker-Updatequellen und der Workflow für Lint, Integrationstests, Browser-E2E und Build sind inzwischen implementiert. Auto-Merge verlangt einen erfolgreichen Docker-Build sowie Tests/Lint und die eingerichteten Pflichtchecks. Einrichtung der Repository-Regeln siehe README. CI baut aktuell nur ein Image; Registry-Push und Deployment sind separate Erweiterungen.

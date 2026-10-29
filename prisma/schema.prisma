@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+}
+model Department {
+  id String @id @default(uuid())
+  name String
+  nameKey String @unique
+  color String @default("#0d9488")
+  archived Boolean @default(false)
+  users User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("departments")
+}
+model User {
+  id String @id @default(uuid())
+  email String
+  emailKey String @unique
+  displayName String
+  passwordHash String
+  role String @default("EMPLOYEE")
+  departmentId String
+  department Department @relation(fields:[departmentId],references:[id],onDelete:Restrict)
+  isActive Boolean @default(true)
+  employmentStart String
+  employmentEnd String?
+  authVersion Int @default(1)
+  version Int @default(1)
+  schedules WorkSchedule[]
+  balances VacationBalance[]
+  vacations Vacation[]
+  sessions Session[]
+  tokens PasswordToken[]
+  slots VacationSlot[]
+  idempotency IdempotencyKey[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([departmentId,isActive])
+  @@map("users")
+}
+model HolidayCalendar {
+  id String @id @default(uuid())
+  code String @unique
+  name String
+  timezone String @default("Europe/Berlin")
+  archived Boolean @default(false)
+  years HolidayYear[]
+  schedules WorkSchedule[]
+  @@map("holiday_calendars")
+}
+model HolidayYear {
+  id String @id @default(uuid())
+  calendarId String
+  calendar HolidayCalendar @relation(fields:[calendarId],references:[id],onDelete:Restrict)
+  year Int
+  state String @default("DRAFT")
+  version Int @default(1)
+  confirmedAt DateTime?
+  confirmedBy String?
+  holidays Holiday[]
+  @@unique([calendarId,year])
+  @@map("holiday_years")
+}
+model Holiday {
+  id String @id @default(uuid())
+  holidayYearId String
+  holidayYear HolidayYear @relation(fields:[holidayYearId],references:[id],onDelete:Restrict)
+  date String
+  name String
+  blockedSlots String @default("FULL")
+  @@unique([holidayYearId,date])
+  @@map("holidays")
+}
+model WorkSchedule {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  validFrom String
+  validTo String?
+  calendarId String
+  calendar HolidayCalendar @relation(fields:[calendarId],references:[id],onDelete:Restrict)
+  version Int @default(1)
+  days ScheduleDay[]
+  vacationDays VacationDay[]
+  @@unique([userId,validFrom])
+  @@index([userId,validFrom,validTo])
+  @@map("work_schedules")
+}
+model ScheduleDay {
+  id String @id @default(uuid())
+  scheduleId String
+  schedule WorkSchedule @relation(fields:[scheduleId],references:[id],onDelete:Restrict)
+  weekday Int
+  isWorkday Boolean
+  @@unique([scheduleId,weekday])
+  @@map("schedule_days")
+}
+model VacationBalance {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  year Int
+  state String @default("OPEN")
+  version Int @default(1)
+  grants BalanceGrant[] @relation("grants")
+  carriedTo BalanceGrant[] @relation("carryover")
+  @@unique([userId,year])
+  @@map("vacation_balances")
+}
+model BalanceGrant {
+  id String @id @default(uuid())
+  balanceId String
+  balance VacationBalance @relation("grants",fields:[balanceId],references:[id],onDelete:Restrict)
+  kind String
+  grantedUnits Int
+  withdrawnUnits Int @default(0)
+  validFrom String
+  expiresOn String?
+  sourceBalanceId String?
+  sourceBalance VacationBalance? @relation("carryover",fields:[sourceBalanceId],references:[id],onDelete:Restrict)
+  reason String
+  createdBy String
+  createdAt DateTime @default(now())
+  changes GrantChange[]
+  allocations DayAllocation[]
+  @@index([balanceId,expiresOn,validFrom])
+  @@map("balance_grants")
+}
+model GrantChange {
+  id String @id @default(uuid())
+  grantId String
+  grant BalanceGrant @relation(fields:[grantId],references:[id],onDelete:Restrict)
+  deltaGrantedUnits Int @default(0)
+  deltaWithdrawnUnits Int @default(0)
+  reason String
+  actorId String
+  createdAt DateTime @default(now())
+  @@index([grantId,createdAt])
+  @@map("balance_grant_changes")
+}
+model Vacation {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  startDate String
+  endDate String
+  startPart String @default("FULL")
+  endPart String @default("FULL")
+  status String @default("BOOKED")
+  privateNote String @default("")
+  createdBy String
+  updatedBy String
+  cancelledBy String?
+  cancelledAt DateTime?
+  cancelReason String?
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  days VacationDay[]
+  @@index([userId,status,startDate,endDate])
+  @@index([status,startDate,endDate])
+  @@map("vacations")
+}
+model VacationDay {
+  id String @id @default(uuid())
+  vacationId String
+  vacation Vacation @relation(fields:[vacationId],references:[id],onDelete:Restrict)
+  date String
+  scheduleId String
+  schedule WorkSchedule @relation(fields:[scheduleId],references:[id],onDelete:Restrict)
+  holidayYearVersion Int
+  calculationVersion Int @default(1)
+  units Int
+  allocations DayAllocation[]
+  slots VacationSlot[]
+  @@unique([vacationId,date])
+  @@index([date])
+  @@map("vacation_days")
+}
+model DayAllocation {
+  id String @id @default(uuid())
+  vacationDayId String
+  vacationDay VacationDay @relation(fields:[vacationDayId],references:[id],onDelete:Restrict)
+  grantId String
+  grant BalanceGrant @relation(fields:[grantId],references:[id],onDelete:Restrict)
+  units Int
+  releasedAt DateTime?
+  createdAt DateTime @default(now())
+  @@unique([vacationDayId,grantId])
+  @@index([grantId,releasedAt])
+  @@map("day_allocations")
+}
+model VacationSlot {
+  id String @id @default(uuid())
+  vacationDayId String
+  vacationDay VacationDay @relation(fields:[vacationDayId],references:[id],onDelete:Restrict)
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  date String
+  slot String
+  @@unique([userId,date,slot])
+  @@unique([vacationDayId,slot])
+  @@map("vacation_slots")
+}
+model Session {
+  id String @id
+  userId String?
+  user User? @relation(fields:[userId],references:[id],onDelete:Cascade)
+  authVersion Int @default(0)
+  csrfSecret String
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  expiresAt DateTime
+  absoluteExpiresAt DateTime
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+model PasswordToken {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  purpose String
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId,purpose])
+  @@index([expiresAt])
+  @@map("password_tokens")
+}
+model IdempotencyKey {
+  id String @id @default(uuid())
+  actorId String
+  actor User @relation(fields:[actorId],references:[id],onDelete:Restrict)
+  key String
+  operation String
+  requestHash String
+  resultJson String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@unique([actorId,key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+model AuditLog {
+  id String @id @default(uuid())
+  actorId String?
+  action String
+  entityType String
+  entityId String
+  subjectUserId String?
+  beforeJson String?
+  afterJson String?
+  reason String?
+  requestId String
+  createdAt DateTime @default(now())
+  @@index([entityType,entityId,createdAt])
+  @@index([actorId,createdAt])
+  @@index([subjectUserId,createdAt])
+  @@map("audit_logs")
+}
+model Setting {
+  id String @id @default("company")
+  companyName String @default("Urlaubsplaner")
+  timezone String @default("Europe/Berlin")
+  defaultAllowanceUnits Int @default(60)
+  maxBookingDays Int @default(366)
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  @@map("settings")
+}
