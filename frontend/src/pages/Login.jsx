@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Leaf, Sun, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { initCsrf, send } from '../api.js';
 import { Field, ErrorBox } from '../components/ui.jsx';
-export function Login({ onLogin, error: externalError, activation, onActivated }) {
+export function Login({ setup, onLogin, error: externalError, activation, onActivated }) {
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState(''),
     [password, setPassword] = useState(''),
     [error, setError] = useState(''),
@@ -39,11 +40,19 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
         </div>
         <div className="login-card">
           <p className="eyebrow">DEIN TEAM. DEINE AUSZEIT.</p>
-          <h1>{activation ? 'Dein Zugang' : 'Schön, dass du da bist.'}</h1>
+          <h1>
+            {setup
+              ? 'Willkommen! Richte deinen Zugang ein.'
+              : activation
+                ? 'Dein Zugang'
+                : 'Schön, dass du da bist.'}
+          </h1>
           <p>
-            {activation
-              ? 'Lege dein persönliches Passwort fest.'
-              : 'Melde dich an und plane deinen nächsten Urlaub.'}
+            {setup
+              ? 'Erstelle den ersten Administrator. Danach kannst du dein Team einrichten.'
+              : activation
+                ? 'Lege dein persönliches Passwort fest.'
+                : 'Melde dich an und plane deinen nächsten Urlaub.'}
           </p>
           <ErrorBox error={error || externalError} />
           {done ? (
@@ -66,7 +75,10 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
                     await send('/auth/activate', { token: activation, password });
                     setDone(true);
                   } else {
-                    await send('/auth/login', { email, password });
+                    await send(
+                      setup ? '/auth/setup' : '/auth/login',
+                      setup ? { displayName, email, password } : { email, password },
+                    );
                     await onLogin();
                   }
                 } catch (e) {
@@ -76,6 +88,18 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
                 }
               }}
             >
+              {setup && (
+                <Field label="Dein Name">
+                  <input
+                    autoComplete="name"
+                    required
+                    minLength={2}
+                    maxLength={100}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </Field>
+              )}
               {!activation && (
                 <Field label="E-Mail-Adresse">
                   <input
@@ -91,29 +115,39 @@ export function Login({ onLogin, error: externalError, activation, onActivated }
               <Field
                 label="Passwort"
                 hint={
-                  activation ? 'Mindestens 12 Zeichen. Eine lange Passphrase ist ideal.' : undefined
+                  activation || setup
+                    ? 'Mindestens 12 Zeichen. Eine lange Passphrase ist ideal.'
+                    : undefined
                 }
               >
                 <input
                   type="password"
-                  autoComplete={activation ? 'new-password' : 'current-password'}
-                  minLength={activation ? 12 : 1}
+                  autoComplete={activation || setup ? 'new-password' : 'current-password'}
+                  minLength={activation || setup ? 12 : 1}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Field>
               <button disabled={busy} className="button primary login-submit">
-                {busy ? 'Einen Moment …' : activation ? 'Passwort speichern' : 'Anmelden'}
+                {busy
+                  ? 'Einen Moment …'
+                  : setup
+                    ? 'Administrator anlegen'
+                    : activation
+                      ? 'Passwort speichern'
+                      : 'Anmelden'}
                 <ArrowRight size={18} />
               </button>
             </form>
           )}
           <p className="login-help">
             <ShieldCheck size={16} />
-            Dein Zugang wird von deinem Unternehmen verwaltet.
+            {setup
+              ? 'Dieser Schritt ist nur bei der ersten Einrichtung verfügbar.'
+              : 'Dein Zugang wird von deinem Unternehmen verwaltet.'}
             <br />
-            Bei Loginproblemen hilft dein Administrator.
+            {!setup && 'Bei Loginproblemen hilft dein Administrator.'}
           </p>
         </div>
       </section>

@@ -25,7 +25,7 @@ jobs:
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Wait for successful build and required checks, then enable auto-merge
+      - name: Wait for successful quality checks, then enable auto-merge
         if: >-
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor'
@@ -38,23 +38,22 @@ jobs:
         run: |
           set -euo pipefail
           # No required checks configured => fail closed.
-          for attempt in $(seq 1 75); do
+          for ((attempt = 1; attempt <= 75; attempt++)); do
             current_sha=$(gh pr view "$PR_NUMBER" --json headRefOid --jq .headRefOid)
             if [[ "$current_sha" != "$HEAD_SHA" ]]; then
               echo 'PR head changed; a new workflow run must validate it.'
               exit 1
             fi
-            build_state=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" \
-              --jq '[.check_runs[] | select(.name == "Docker build" and .app.slug == "github-actions")] | sort_by(.id) | last | if . == null then "missing" else (.conclusion // .status) end')
-            case "$build_state" in
+            quality_state=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" \
+              --jq '[.check_runs[] | select(.name == "Tests and lint" and .app.slug == "github-actions")] | sort_by(.id) | last | if . == null then "missing" else (.conclusion // .status) end')
+            case "$quality_state" in
               failure|cancelled|timed_out|action_required|startup_failure|stale|skipped|neutral)
-                echo "Docker build did not succeed: $build_state"
+                echo "Quality checks did not succeed: $quality_state"
                 exit 1
                 ;;
               success)
                 required_count=$(gh pr checks "$PR_NUMBER" --required --json name --jq length || echo 0)
-                quality_state=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Tests and lint" and .app.slug == "github-actions")] | sort_by(.id) | last | .conclusion // "missing"')
-                if [[ "$quality_state" == success && "$required_count" =~ ^[1-9][0-9]*$ ]] && gh pr checks "$PR_NUMBER" --required; then
+                if [[ "$required_count" =~ ^[1-9][0-9]*$ ]] && gh pr checks "$PR_NUMBER" --required; then
                   gh pr merge "$PR_NUMBER" --auto --squash --match-head-commit "$HEAD_SHA"
                   exit 0
                 fi
@@ -62,5 +61,5 @@ jobs:
             esac
             sleep 20
           done
-          echo '::error::Build oder verpflichtende Checks fehlen/sind nicht erfolgreich. Branch-Regeln und CI prüfen.'
+          echo '::error::Qualitätsprüfungen oder verpflichtende Checks fehlen/sind nicht erfolgreich. Branch-Regeln und CI prüfen.'
           exit 1

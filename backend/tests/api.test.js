@@ -141,6 +141,56 @@ const body = (start = monday, end = start) => ({
   endPart: 'FULL',
   privateNote: 'Privat und unsichtbar',
 });
+describe('Ersteinrichtung im Browser', () => {
+  it('erstellt nur einen Admin bei gleichzeitiger Einrichtung und meldet ihn an', async () => {
+    await db.user.updateMany({ data: { role: 'EMPLOYEE' } });
+    expect((await request(app).get('/api/v1/auth/setup')).body.setupRequired).toBe(true);
+    const agents = [request.agent(app), request.agent(app)];
+    const tokens = await Promise.all(
+      agents.map(async (agent) => (await agent.get('/api/v1/auth/csrf')).body.csrfToken),
+    );
+    const results = await Promise.all(
+      agents.map((agent, index) =>
+        agent
+          .post('/api/v1/auth/setup')
+          .set('Origin', 'http://localhost:3000')
+          .set('X-CSRF-Token', tokens[index])
+          .send({
+            displayName: 'Erster Admin',
+            email: `first${index}@example.test`,
+            password: 'Ein-langes-Passwort-2026',
+          }),
+      ),
+    );
+    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    expect(await db.user.count({ where: { role: 'ADMIN' } })).toBe(1);
+    const winner = results.findIndex((r) => r.status === 201);
+    expect((await agents[winner].get('/api/v1/me')).body.user.role).toBe('ADMIN');
+    expect((await request(app).get('/api/v1/auth/setup')).body.setupRequired).toBe(false);
+  });
+  it('schützt die Einrichtung durch CSRF, Validierung und die bestehende Adminrolle', async () => {
+    expect((await request(app).post('/api/v1/auth/setup').send({})).status).toBe(403);
+    const c = await client();
+    expect(
+      (
+        await c.send('/auth/setup', {
+          displayName: 'Admin',
+          email: 'new@example.test',
+          password: 'kurz',
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await c.send('/auth/setup', {
+          displayName: 'Admin',
+          email: 'new@example.test',
+          password: 'Ein-langes-Passwort-2026',
+        })
+      ).status,
+    ).toBe(409);
+  });
+});
 describe('Anmeldung, Sicherheit und Rechte', () => {
   it('verlangt Anmeldung und schützt Schreibzugriffe vor CSRF und falscher Origin', async () => {
     expect((await request(app).get('/api/v1/me')).status).toBe(401);

@@ -57,8 +57,10 @@ Erneut erfolgreich geprüft: reguläres `npm ci` ohne Peer-Workaround, konsisten
 Dependabot ignoriert Major-Versionsupdates für FullCalendar, ESLint/`@eslint/js` und das Node-Basisimage. Minor-/Patch-Updates bleiben aktiv; FullCalendar- und ESLint-Pakete werden jeweils gemeinsam aktualisiert. Die übrigen übernommenen Updates, einschließlich Argon2 0.45.1 und der GitHub Actions, bleiben erhalten.
 
 
-## Docker-Veröffentlichung nach Tesla-Dashboard-Vorlage
+## Docker-Veröffentlichung ausschließlich bei Releases
 
-Der zuvor getrennte Build-/Release-Ablauf wird durch `.github/workflows/docker-image.yml` ersetzt. Wie in der Vorlage wird nach Tests auf `main` mit `GITHUB_TOKEN` nach GHCR veröffentlicht (`latest` und Commit-SHA). Releases erhalten zusätzlich Versions-Tags; bestehende veröffentlichte Releases können per manueller Eingabe `release_tag` nachgebaut werden. Pull Requests und Feature-Branches veröffentlichen nicht. Der Checkname `Docker build` bleibt für Branchschutz und Dependabot stabil.
+`.github/workflows/docker-image.yml` startet nur bei `release: published` und baut den Quellcode des Release-Tags. Die Anmeldung bei GHCR erfolgt über `GITHUB_TOKEN`. Jedes Image erhält Versions- und Commit-Tags; nur stabile Releases aktualisieren `latest`. Pushes, Pull Requests, reine Tag-Pushes und manuelle Starts lösen keinen Docker-Build aus.
 
-Zehn Ereignisfälle der Veröffentlichungsauswahl wurden lokal geprüft, darunter Pull Requests, Feature-Branches, main, manuelle Release-Nachbauten, Vorabversionen und ungültige Tags. Alle eingebetteten Bash-Skripte sind syntaktisch gültig. Die Produktionsanwendung und der Dockerfile werden durch diese Workflow-Änderung nicht verändert.
+Der Qualitätsworkflow läuft weiterhin bei Pushes und Pull Requests. Dependabot wartet auf `Tests and lint` sowie die verpflichtenden Branchchecks und benötigt keinen Docker-Build mehr. Ein bisheriger Pflichtcheck `Docker build` muss aus den GitHub-Branchregeln entfernt werden. Die Produktionsanwendung und der Dockerfile werden durch diese Workflow-Änderung nicht verändert.
+
+Die Release-only-Konfiguration wurde mit actionlint und Bash-Syntaxprüfung validiert. Sechs Fälle für Versions-Tags, Vorabversionen und ungültige Tags sind geprüft; der einzige konfigurierte Auslöser ist `release: published`.

@@ -1,3 +1,4 @@
+import { createFirstAdmin } from './setup.js';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import argon2 from 'argon2';
 import { z } from 'zod';
@@ -87,6 +88,15 @@ export function requireAuth(req, res, next) {
   next();
 }
 export function authRoutes(router, loginLimit) {
+  router.get('/auth/setup', async (req, res) => {
+    res.json({ setupRequired: (await db.user.count({ where: { role: 'ADMIN' } })) === 0 });
+  });
+  router.post('/auth/setup', loginLimit, async (req, res) => {
+    const user = await createFirstAdmin(req.body);
+    await db.session.deleteMany({ where: { id: req.session.id } });
+    const session = await makeSession(res, user);
+    res.status(201).json({ user: publicUser(user), csrfToken: session.csrfSecret });
+  });
   router.get('/auth/csrf', async (req, res) => {
     const s = req.session || (await makeSession(res));
     res.json({ csrfToken: s.csrfSecret });

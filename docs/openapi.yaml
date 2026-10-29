@@ -4060,6 +4060,67 @@
           }
         }
       }
+    },
+    "/auth/setup": {
+      "get": {
+        "summary": "Prüfen, ob die erste Einrichtung erforderlich ist",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "setupRequired: true, solange kein Admin existiert"
+          }
+        }
+      },
+      "post": {
+        "summary": "Ersten Admin erstellen und anmelden; nur ohne bestehenden Admin",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "displayName",
+                  "email",
+                  "password"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 256
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin angelegt, Session-Cookie und CSRF-Token gesetzt"
+          },
+          "400": {
+            "description": "Ungültige Eingaben"
+          },
+          "403": {
+            "description": "CSRF oder Origin ungültig"
+          },
+          "409": {
+            "description": "Einrichtung bereits abgeschlossen"
+          }
+        }
+      }
     }
   },
   "components": {

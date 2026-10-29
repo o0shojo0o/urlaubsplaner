@@ -29,6 +29,7 @@ export default function App() {
   const [user, setUser] = useState(null),
     [settings, setSettings] = useState(null),
     [ready, setReady] = useState(false),
+    [setup, setSetup] = useState(false),
     [error, setError] = useState('');
   const [page, setPage] = useState('dashboard'),
     [year, setYear] = useState(Number(now().slice(0, 4))),
@@ -47,6 +48,13 @@ export default function App() {
       setSettings(data.settings);
     } catch (e) {
       if (e.status !== 401) setError(e.message);
+      else {
+        try {
+          setSetup((await api('/auth/setup')).setupRequired);
+        } catch (error) {
+          setError(error.message);
+        }
+      }
     } finally {
       setReady(true);
     }
@@ -81,6 +89,7 @@ export default function App() {
       <>
         <ThemeToggle className="login-theme-toggle" />
         <Login
+          setup={setup}
           error={error}
           activation={activation}
           onActivated={() => {

@@ -22,10 +22,9 @@ Voraussetzungen: Docker mit Compose. Im Projektverzeichnis:
 ```sh
 cp .env.example .env
 docker compose up -d --build
-docker compose exec app npm run bootstrap
 ```
 
-Das Bootstrap-Kommando fragt Name, E-Mail und ein eigenes Passwort (mindestens 12 Zeichen, verdeckte Eingabe) ab. Es funktioniert nur, wenn noch kein Admin existiert. Keine Standardpasswörter, keine öffentliche Registrierung.
+Beim ersten Öffnen der Anwendung erscheint automatisch die Einrichtung: Name, E-Mail und ein eigenes Passwort (mindestens 12 Zeichen) eingeben und **Administrator anlegen** anklicken. Danach bist du direkt angemeldet. Sobald ein Admin existiert, ist die Einrichtung gesperrt; weitere Zugänge werden im Adminbereich angelegt. Die neue Installation daher direkt nach dem Start einrichten. Alternativ bleibt `docker compose exec app npm run bootstrap` für die Einrichtung per Konsole verfügbar.
 
 Anschließend [http://localhost:3000](http://localhost:3000) öffnen. Im Adminbereich zuerst den Feiertagskalender öffnen, Jahr und Bundesland wählen und **Online importieren** anklicken. Die Feiertage werden über feiertage-api.de geladen und ersetzen die Einträge im Formular. Örtliche Besonderheiten und die mitgelieferten Hinweise prüfen, bei Bedarf Einträge bearbeiten und anschließend die Vollständigkeit bestätigen. Zum Laden benötigt der Server Internetzugang; bei einem Fehler bleiben vorhandene Einträge erhalten. Danach Mitarbeiter anlegen und über **Zugangslink** einen persönlichen Einmallink erzeugen. Neue Mitarbeiter bekommen einen Wochenplan und das gewählte Jahreskonto.
 
@@ -57,7 +56,7 @@ Das ist ein lokaler Docker-Konfigurationsfehler; auf einem normal eingerichteten
 
 ## Fertige Images aus GHCR
 
-Nach erfolgreichem Workflow auf `main`:
+Nach einem erfolgreich gebauten stabilen Release:
 
 ```sh
 docker pull ghcr.io/o0shojo0o/urlaubsplaner:latest
@@ -69,9 +68,55 @@ Für ein veröffentlichtes Release ist ein fester Versions-Tag vorgesehen:
 docker pull ghcr.io/o0shojo0o/urlaubsplaner:v1.0.0
 ```
 
-Der Workflow **Docker-Image bauen** veröffentlicht bei einem GitHub-Release automatisch dessen Quellcode. Ein bereits vorhandenes Release lässt sich unter **Actions → Docker-Image bauen → Run workflow** auf Branch `main` mit Eingabe `release_tag=v1.0.0` nachbauen. Ohne diese Eingabe baut ein manueller Lauf auf `main` den aktuellen Branchstand. Image-Tags, Digest und Veröffentlichungsstatus stehen in der Workflow-Zusammenfassung. Bei einem privaten GHCR-Paket ist vor dem Pull eine Registry-Anmeldung nötig; die Paketsichtbarkeit wird in den GitHub-Paketeinstellungen verwaltet.
+Der Workflow **Docker-Image für Release** startet ausschließlich bei einem veröffentlichten GitHub-Release (`release: published`) und baut den Quellcode des zugehörigen Tags. Pushes, Pull Requests, reine Tag-Pushes und manuelle Workflow-Starts erzeugen keine Docker-Images. Stabile Releases aktualisieren `latest`; Vorabversionen bekommen nur Versions- und Commit-Tags. Image-Tags und Digest stehen in der Workflow-Zusammenfassung. Bei einem privaten GHCR-Paket ist vor dem Pull eine Registry-Anmeldung nötig; die Paketsichtbarkeit wird in den GitHub-Paketeinstellungen verwaltet.
 
-Die lokale `compose.yaml` verwendet weiterhin einen lokalen Build. Für einen Image-basierten Betrieb wird dort `image: ghcr.io/o0shojo0o/urlaubsplaner:v1.0.0` eingesetzt und `build: .` entfernt; Datenvolume, Umgebungsvariablen und Portkonfiguration bleiben erhalten.
+### Docker-Compose-Beispiel mit fertigem Image
+
+Für den Betrieb ohne lokalen Build folgende Datei als `compose.yaml` speichern:
+
+```yaml
+services:
+  app:
+    image: ghcr.io/o0shojo0o/urlaubsplaner:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    init: true
+    ports:
+      - '127.0.0.1:${HOST_PORT:-3000}:3000'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/urlaubsplaner.db
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      TZ: Europe/Berlin
+      HOME: /tmp
+      CHECKPOINT_DISABLE: '1'
+    volumes:
+      - app-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 768m
+    cpus: 2
+volumes:
+  app-data:
+```
+
+Das Beispiel verwendet `latest` aus dem letzten erfolgreich gebauten stabilen Release. Für eine feste Version in einer `.env` neben der Compose-Datei beispielsweise `IMAGE_TAG=v1.0.0` setzen; der Tag muss bereits in GHCR veröffentlicht sein. Für HTTPS die oben beschriebenen Werte für `APP_ORIGIN`, `COOKIE_SECURE` und `TRUST_PROXY` ergänzen. Bei geändertem `HOST_PORT` auch den Port in `APP_ORIGIN` anpassen.
+
+Im Verzeichnis der Compose-Datei starten:
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
+Anschließend [http://localhost:3000](http://localhost:3000) öffnen und bei einer neuen Installation den ersten Administrator über die Einrichtung anlegen. Die SQLite-Daten bleiben im Volume `app-data` erhalten. Beim Wechsel von der lokalen Build-Konfiguration dieselbe Compose-Datei im bisherigen Projektverzeichnis ersetzen, damit das vorhandene Volume weiterverwendet wird.
+
+Für ein Update zuerst ein Backup erstellen, anschließend erneut `docker compose pull` und `docker compose up -d` ausführen. Bei festem `IMAGE_TAG` vorher die gewünschte veröffentlichte Version eintragen. Die im Repository enthaltene `compose.yaml` bleibt die Variante für lokale Builds.
 
 ## Entwicklung und Demo
 
@@ -82,7 +127,6 @@ cp .env.example .env
 npm ci
 npm run db:generate
 npm run db:migrate
-npm run bootstrap
 npm run dev
 ```
 
@@ -160,13 +204,13 @@ Vor Updates Backup erstellen, dann `git pull` und `docker compose up -d --build`
 
 ## GitHub Actions und Dependabot
 
-- **Docker build:** `.github/workflows/docker-image.yml` prüft Code/Tests und baut bei Pushes und Pull Requests. Auf `main` veröffentlicht er wie beim Tesla-Dashboard nach `ghcr.io/o0shojo0o/urlaubsplaner` mit `latest` und vollständiger Commit-SHA. Veröffentlichte Releases erhalten zusätzlich ihr Versions-Tag, z. B. `v1.0.0` und `1.0.0`. Vorabversionen bekommen kein `latest`. Pull Requests und andere Branches veröffentlichen keine Images. Die Registry-Anmeldung verwendet `GITHUB_TOKEN`; ein eigenes `ACCESS_TOKEN` ist nicht erforderlich.
+- **Release-Image bauen:** `.github/workflows/docker-image.yml` erstellt und veröffentlicht ausschließlich bei `release: published` ein Image nach `ghcr.io/o0shojo0o/urlaubsplaner`. Tags: Release-Version (z. B. `v1.0.0` und `1.0.0`), vollständige Commit-SHA und bei stabilen Releases `latest`. Anmeldung über `GITHUB_TOKEN`; kein zusätzliches `ACCESS_TOKEN` erforderlich.
 - **Tests and lint:** Lint, echte SQLite-Tests, Frontend-Build, Browser-E2E, Migration-/Backup-Smoke-Test und Abhängigkeitsprüfung unter Node 24.
 - **Dependabot:** GitHub Actions, npm-Workspaces und Docker-Basisimage, wöchentlich montags um 07:00 Uhr Europe/Berlin. Zusammengehörige Prisma-Pakete werden gemeinsam aktualisiert.
 - **Kompatibilitätsgrenzen:** FullCalendar bleibt gemeinsam auf Version 6, ESLint und `@eslint/js` auf Version 9, das Docker-Basisimage auf Node 24 LTS. Dependabot aktualisiert diese Pakete innerhalb der Versionsreihe; Major-Upgrades werden dafür unterdrückt und erst als geprüfte Migration vorgenommen. FullCalendar- und ESLint-Pakete werden jeweils zusammen aktualisiert.
-- **Auto-Merge:** Nur verifizierte Dependabot-Patch-/Minor-Updates im selben Repository gegen den Standardbranch. Docker-Build, Tests/Lint und alle verpflichtenden Branchchecks müssen erfolgreich sein; ohne Pflichtchecks kein automatischer Merge. Major-Updates bleiben manuell. Der privilegierte Merge-Workflow führt keinen PR-Code aus.
+- **Auto-Merge:** Nur verifizierte Dependabot-Patch-/Minor-Updates im selben Repository gegen den Standardbranch. Tests/Lint und alle verpflichtenden Branchchecks müssen erfolgreich sein; ohne Pflichtchecks kein automatischer Merge. Major-Updates bleiben manuell. Der privilegierte Merge-Workflow führt keinen PR-Code aus.
 
-Einmalig in GitHub: **Allow auto-merge** und **Squash merging** aktivieren. Den Standardbranch mit Pull-Request-Pflicht, aktuellem Branchstand und Pflichtchecks **Docker build** sowie **Tests and lint** schützen. Verlangte manuelle Reviews werden nicht umgangen. Organisationsregeln müssen die verwendeten Actions und Schreibrechte für den Merge-Workflow zulassen.
+Einmalig in GitHub: **Allow auto-merge** und **Squash merging** aktivieren. Den Standardbranch mit Pull-Request-Pflicht, aktuellem Branchstand und Pflichtcheck **Tests and lint** schützen. Einen bisherigen Pflichtcheck **Docker build** aus den Branchregeln entfernen, da Images erst bei Releases gebaut werden. Verlangte manuelle Reviews werden nicht umgangen. Organisationsregeln müssen die verwendeten Actions und Schreibrechte für den Merge-Workflow zulassen.
 
 ## Projektunterlagen
 
