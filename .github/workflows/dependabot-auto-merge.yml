@@ -1,0 +1,65 @@
+name: Dependabot auto-merge
+# Process metadata only; never check out or execute PR code here.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  auto-merge:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Read verified Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Wait for successful build and required checks, then enable auto-merge
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # No required checks configured => fail closed.
+          for attempt in $(seq 1 75); do
+            current_sha=$(gh pr view "$PR_NUMBER" --json headRefOid --jq .headRefOid)
+            if [[ "$current_sha" != "$HEAD_SHA" ]]; then
+              echo 'PR head changed; a new workflow run must validate it.'
+              exit 1
+            fi
+            build_state=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" \
+              --jq '[.check_runs[] | select(.name == "Docker build" and .app.slug == "github-actions")] | sort_by(.id) | last | if . == null then "missing" else (.conclusion // .status) end')
+            case "$build_state" in
+              failure|cancelled|timed_out|action_required|startup_failure|stale|skipped|neutral)
+                echo "Docker build did not succeed: $build_state"
+                exit 1
+                ;;
+              success)
+                required_count=$(gh pr checks "$PR_NUMBER" --required --json name --jq length || echo 0)
+                if [[ "$required_count" =~ ^[1-9][0-9]*$ ]] && gh pr checks "$PR_NUMBER" --required; then
+                  gh pr merge "$PR_NUMBER" --auto --squash --match-head-commit "$HEAD_SHA"
+                  exit 0
+                fi
+                ;;
+            esac
+            sleep 20
+          done
+          echo '::error::Build oder verpflichtende Checks fehlen/sind nicht erfolgreich. Branch-Regeln und CI prüfen.'
+          exit 1
