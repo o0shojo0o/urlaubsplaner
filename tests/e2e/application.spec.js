@@ -118,6 +118,8 @@ test('Kalenderdruck zeigt nur den gewählten Kalender und stellt die Ansicht wie
 test('Jahreskalender übernimmt markierte Bereiche und einzelne Tage in die Buchung', async ({
   page,
 }) => {
+  // Keep both drag endpoints visible, including the end of January.
+  await page.setViewportSize({ width: 1800, height: 1600 });
   await login(page);
   await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
   await page.getByRole('button', { name: 'Jahr', exact: true }).click();
