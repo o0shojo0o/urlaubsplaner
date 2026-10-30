@@ -114,3 +114,41 @@ test('Kalenderdruck zeigt nur den gewählten Kalender und stellt die Ansicht wie
     await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   }
 });
+
+test('Jahreskalender übernimmt markierte Bereiche und einzelne Tage in die Buchung', async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
+  await page.getByRole('button', { name: 'Jahr', exact: true }).click();
+  const drag = async (from, to) => {
+    const start = await page.locator(`.annual-day[data-date="${from}"]`).boundingBox();
+    const end = await page.locator(`.annual-day[data-date="${to}"]`).boundingBox();
+    await page.mouse.move(start.x + 10, start.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(end.x + 10, end.y + 10, { steps: 10 });
+    await expect(page.locator(`.annual-day[data-date="${to}"]`)).toHaveClass(/annual-selected/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.mouse.up();
+  };
+  for (const [from, to] of [
+    [monday, friday],
+    [`${year}-02-03`, `${year}-01-29`],
+  ]) {
+    await drag(from, to);
+    const [start, end] = [from, to].sort();
+    await expect(page.getByLabel('Erster Urlaubstag', { exact: true })).toHaveValue(start);
+    await expect(page.getByLabel('Letzter Urlaubstag (inklusive)', { exact: true })).toHaveValue(
+      end,
+    );
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.locator('.annual-selected')).toHaveCount(0);
+  }
+  await page.locator(`.annual-day[data-date="${monday}"]`).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Erster Urlaubstag', { exact: true })).toHaveValue(monday);
+  await expect(page.getByLabel('Letzter Urlaubstag (inklusive)', { exact: true })).toHaveValue(
+    monday,
+  );
+});

@@ -178,7 +178,7 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
           year={year}
           revision={revision}
           departmentId={departmentId}
-          onSelect={(d) => openBooking({ startDate: d, endDate: d })}
+          onSelect={openBooking}
         />
       ) : (
         <div className="calendar-body">
@@ -259,6 +259,14 @@ function EmployeeLegend({ events }) {
 }
 
 function YearGrid({ year, revision, departmentId, onSelect }) {
+  const selectionRef = useRef(null);
+  const [selection, setSelection] = useState(null);
+  const clearSelection = () => {
+    selectionRef.current = null;
+    setSelection(null);
+  };
+  const selectedStart = selection && [selection.anchor, selection.end].sort()[0];
+  const selectedEnd = selection && [selection.anchor, selection.end].sort()[1];
   const [data, error] = useData(async () => {
     const range = `start=${year}-01-01&endExclusive=${year + 1}-01-01`;
     const [events, holidays] = await Promise.all([
@@ -329,11 +337,46 @@ function YearGrid({ year, revision, departmentId, onSelect }) {
                       className={`${weekday >= 5 ? 'annual-weekend' : ''} ${weekday === 6 ? 'annual-sunday' : ''} ${holidays.length ? 'annual-holiday' : ''}`}
                     >
                       <button
-                        className={`annual-day ${booked.length ? 'annual-booked' : ''} ${day === now() ? 'annual-today' : ''}`}
+                        data-date={day}
+                        className={`annual-day ${selection && day >= selectedStart && day <= selectedEnd ? 'annual-selected' : ''} ${booked.length ? 'annual-booked' : ''} ${day === now() ? 'annual-today' : ''}`}
                         title={description}
                         aria-label={description}
                         aria-current={day === now() ? 'date' : undefined}
-                        onClick={() => onSelect(day)}
+                        onPointerDown={(event) => {
+                          if (event.button !== 0 || !event.isPrimary) return;
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                          const next = { anchor: day, end: day };
+                          selectionRef.current = next;
+                          setSelection(next);
+                        }}
+                        onPointerMove={(event) => {
+                          if (!selectionRef.current) return;
+                          const target = document
+                            .elementFromPoint(event.clientX, event.clientY)
+                            ?.closest('.annual-day');
+                          if (
+                            !target ||
+                            target.closest('table') !== event.currentTarget.closest('table')
+                          )
+                            return;
+                          const next = { ...selectionRef.current, end: target.dataset.date };
+                          selectionRef.current = next;
+                          setSelection(next);
+                        }}
+                        onPointerUp={() => {
+                          if (!selectionRef.current) return;
+                          const [startDate, endDate] = [
+                            selectionRef.current.anchor,
+                            selectionRef.current.end,
+                          ].sort();
+                          clearSelection();
+                          onSelect({ startDate, endDate });
+                        }}
+                        onPointerCancel={clearSelection}
+                        onLostPointerCapture={clearSelection}
+                        onClick={(event) => {
+                          if (event.detail === 0) onSelect({ startDate: day, endDate: day });
+                        }}
                       >
                         <span>{String(i + 1).padStart(2, '0')}</span>
                         <small>{weekdays[weekday]}</small>

@@ -855,7 +855,7 @@ td small {
   color: var(--muted-text, #6f6f6f);
   margin-top: 4px;
 }
-tr:hover td {
+table:not(.annual-calendar) tr:hover td {
   background: var(--surface, #fefefe);
 }
 .date-cell {
@@ -2379,6 +2379,15 @@ textarea:focus {
   gap: 4px;
   font-size: 11px;
   color: inherit;
+}
+.annual-day {
+  touch-action: none;
+  user-select: none;
+}
+.annual-day.annual-selected {
+  background: #b9dcf5;
+  color: #15364e;
+  box-shadow: inset 0 0 0 2px #287fb6;
 }
 .annual-day > small {
   font-size: 10px;
