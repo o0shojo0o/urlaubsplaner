@@ -12,7 +12,7 @@ import { useData } from '../hooks/useData.js';
 export function CalendarPanel({ user, year, revision, openBooking, compact = false }) {
   const ref = useRef(null),
     [title, setTitle] = useState(''),
-    [view, setView] = useState('dayGridMonth'),
+    [view, setView] = useState(compact ? 'dayGridMonth' : 'year'),
     [printing, setPrinting] = useState(false),
     [departmentId, setDepartmentId] = useState(''),
     [departments, setDepartments] = useState([]),
@@ -176,6 +176,7 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
       <ErrorBox error={error || calendarError} />
       {view === 'year' ? (
         <YearGrid
+          user={user}
           year={year}
           revision={revision}
           departmentId={departmentId}
@@ -259,9 +260,10 @@ function EmployeeLegend({ events }) {
   ));
 }
 
-function YearGrid({ year, revision, departmentId, onSelect }) {
+function YearGrid({ user, year, revision, departmentId, onSelect }) {
   const selectionRef = useRef(null);
   const [selection, setSelection] = useState(null);
+  const [hoveredBookingId, setHoveredBookingId] = useState(null);
   const clearSelection = () => {
     selectionRef.current = null;
     setSelection(null);
@@ -391,26 +393,46 @@ function YearGrid({ year, revision, departmentId, onSelect }) {
                             {[...new Set(holidays.map((h) => h.name))].join(' · ')}
                           </span>
                         )}
-                        <span className="annual-markers" aria-hidden="true">
-                          {booked.map((v) => (
-                            <i
-                              key={v.id}
-                              style={{ '--leave-color': v.color, left: `${v.lane * 17}px` }}
-                            >
-                              {day === v.visibleStart && (
-                                <span
-                                  className="annual-leave-name"
-                                  style={{
-                                    height: `${(Math.round((Date.parse(v.visibleEnd) - Date.parse(v.visibleStart)) / 86400000) + 1) * 28 - 4}px`,
-                                  }}
-                                >
-                                  {v.displayName}
-                                </span>
-                              )}
-                            </i>
-                          ))}
-                        </span>
                       </button>
+                      <span className="annual-markers">
+                        {booked.map((v) => (
+                          <button
+                            type="button"
+                            className={`annual-leave-strip ${hoveredBookingId === v.id ? 'annual-leave-hovered' : ''}`}
+                            onMouseEnter={() => setHoveredBookingId(v.id)}
+                            onMouseLeave={() => setHoveredBookingId(null)}
+                            key={v.id}
+                            aria-label={`${v.displayName}: ${fmt(v.startDate)} – ${fmt(v.endDate)}${v.own || user.role === 'ADMIN' ? ' bearbeiten' : ' anzeigen'}`}
+                            title={`${v.displayName} · ${fmt(v.startDate)} – ${fmt(v.endDate)}`}
+                            style={{
+                              '--leave-color': v.color,
+                              left: `${v.lane * 17}px`,
+                              '--leave-border-top': day === v.visibleStart ? '2px' : '0px',
+                              '--leave-border-bottom': day === v.visibleEnd ? '2px' : '0px',
+                            }}
+                            onClick={() => {
+                              clearSelection();
+                              setHoveredBookingId(null);
+                              if (v.own || user.role === 'ADMIN') onSelect({ id: v.id });
+                              else
+                                window.alert(
+                                  `${v.displayName}\n${fmt(v.startDate)} – ${fmt(v.endDate)}\n${days(v.units)} Urlaubstage`,
+                                );
+                            }}
+                          >
+                            {day === v.visibleStart && (
+                              <span
+                                className="annual-leave-name"
+                                style={{
+                                  height: `${(Math.round((Date.parse(v.visibleEnd) - Date.parse(v.visibleStart)) / 86400000) + 1) * 28 - 4}px`,
+                                }}
+                              >
+                                {v.displayName}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </span>
                     </td>
                   );
                 })}

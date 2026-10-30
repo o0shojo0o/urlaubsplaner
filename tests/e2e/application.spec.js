@@ -46,7 +46,8 @@ test('Mitarbeiter sieht weder Adminnavigation noch fremde Abteilungsereignisse',
   await login(page);
   await expect(page.getByRole('navigation', { name: 'Verwaltung' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
-  await page.getByRole('button', { name: 'Jahr', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Jahr', exact: true })).toHaveClass('selected');
+  await expect(page.locator('.annual-calendar')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Januar', exact: true })).toBeVisible();
   await expect(page.getByText('Private Kollegin', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Nur deine Abteilung', { exact: false })).toBeVisible();
@@ -122,7 +123,8 @@ test('Jahreskalender übernimmt markierte Bereiche und einzelne Tage in die Buch
   await page.setViewportSize({ width: 1800, height: 1600 });
   await login(page);
   await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
-  await page.getByRole('button', { name: 'Jahr', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Jahr', exact: true })).toHaveClass('selected');
+  await expect(page.locator('.annual-calendar')).toBeVisible();
   const drag = async (from, to) => {
     const start = await page.locator(`.annual-day[data-date="${from}"]`).boundingBox();
     const end = await page.locator(`.annual-day[data-date="${to}"]`).boundingBox();
@@ -160,7 +162,8 @@ test('Jahreskalender behält nach einer Buchung Tabelle, Scrollposition und Foku
 }) => {
   await login(page);
   await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
-  await page.getByRole('button', { name: 'Jahr', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Jahr', exact: true })).toHaveClass('selected');
+  await expect(page.locator('.annual-calendar')).toBeVisible();
   const day = page.locator(`.annual-day[data-date="${monday}"]`);
   await day.scrollIntoViewIfNeeded();
   await day.click();
@@ -170,10 +173,11 @@ test('Jahreskalender behält nach einer Buchung Tabelle, Scrollposition und Foku
     window.savedAnnualScroll = document.querySelector('.annual-calendar-scroll').scrollLeft;
     window.savedPageScroll = window.scrollY;
   });
+  await page.getByLabel('Letzter Urlaubstag (inklusive)', { exact: true }).fill(friday);
   await page.getByRole('button', { name: 'Urlaubstage berechnen' }).click();
   await page.getByRole('button', { name: 'Urlaub verbindlich buchen' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(day.locator('.annual-markers i')).toHaveCount(1);
+  await expect(day.locator('..').locator('.annual-leave-strip')).toHaveCount(1);
   await expect(day).toBeFocused();
   expect(
     await page.evaluate(() => ({
@@ -183,4 +187,27 @@ test('Jahreskalender behält nach einer Buchung Tabelle, Scrollposition und Foku
       vertical: window.scrollY === window.savedPageScroll,
     })),
   ).toEqual({ sameTable: true, horizontal: true, vertical: true });
+  const lastStrip = page
+    .locator(`.annual-day[data-date="${friday}"]`)
+    .locator('..')
+    .locator('.annual-leave-strip');
+  await lastStrip.hover();
+  await expect(page.locator('.annual-leave-hovered')).toHaveCount(5);
+  const firstStrip = day.locator('..').locator('.annual-leave-strip');
+  await expect(firstStrip).toHaveCSS('--leave-border-top', '2px');
+  await expect(lastStrip).toHaveCSS('--leave-border-bottom', '2px');
+  await page.getByRole('heading', { name: 'Die Auszeiten im Team', exact: true }).hover();
+  await expect(page.locator('.annual-leave-hovered')).toHaveCount(0);
+  await page
+    .locator(`.annual-day[data-date="${friday}"]`)
+    .locator('..')
+    .locator('.annual-leave-strip')
+    .click();
+  await expect(page.locator('.annual-leave-hovered')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toContainText('Deine Urlaubsbuchung');
+  await expect(page.getByLabel('Erster Urlaubstag', { exact: true })).toHaveValue(monday);
+  await expect(page.getByLabel('Letzter Urlaubstag (inklusive)', { exact: true })).toHaveValue(
+    friday,
+  );
+  await expect(page.getByRole('button', { name: 'Stornieren', exact: true })).toBeVisible();
 });

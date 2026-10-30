@@ -2414,6 +2414,7 @@ textarea:focus {
   outline-offset: -2px;
 }
 .annual-calendar td {
+  position: relative;
   height: 28px;
 }
 .annual-day {
@@ -2425,27 +2426,48 @@ textarea:focus {
 }
 .annual-markers {
   position: absolute;
-  z-index: 4;
   pointer-events: none;
   left: 43px;
   right: 2px;
   top: -1px;
   bottom: -1px;
 }
-.annual-markers i {
+.annual-markers .annual-leave-strip {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 15px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
   font-style: normal;
+}
+.annual-leave-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
   background: color-mix(in srgb, var(--leave-color) 70%, transparent);
+}
+.annual-leave-strip:focus-visible::before {
+  outline: 2px solid var(--text, #363636);
+  outline-offset: -2px;
+}
+.annual-leave-hovered::before {
+  background: color-mix(in srgb, var(--leave-color) 85%, transparent);
+  box-sizing: border-box;
+  border: solid var(--text, #363636);
+  border-width: var(--leave-border-top) 2px var(--leave-border-bottom);
 }
 .annual-leave-name {
   position: absolute;
   top: 2px;
   left: 0;
   width: 15px;
-  z-index: 2;
+  z-index: 5;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   overflow: hidden;
@@ -2524,11 +2546,11 @@ textarea:focus {
   background: color-mix(in srgb, var(--calendar-day-accent) 16%, transparent);
 }
 .annual-holiday {
-  background: color-mix(in srgb, #287fb6 22%, var(--surface, #fff));
+  background: color-mix(in srgb, #287fb6 10%, var(--surface, #fff));
   color: var(--text, #363636);
 }
 :root[data-theme='dark'] .annual-holiday {
-  background: color-mix(in srgb, #287fb6 30%, #1b2c46);
+  background: color-mix(in srgb, #287fb6 14%, var(--surface, #1b1e24));
 }
 .annual-holiday-name {
   position: relative;
@@ -2537,13 +2559,14 @@ textarea:focus {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  border-radius: 2px;
-  padding: 1px 2px;
-  background: var(--surface, #fff);
-  color: var(--text, #363636);
+  padding: 0 2px;
+  color: #246c98;
   font-size: 9px;
   font-weight: 600;
   pointer-events: none;
+}
+:root[data-theme='dark'] .annual-holiday-name {
+  color: #91c5e6;
 }
 .calendar-legend .holiday-legend-swatch {
   background: #287fb638;
