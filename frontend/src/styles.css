@@ -2397,8 +2397,7 @@ textarea:focus {
 .annual-invalid {
   background: var(--highlight-surface, #f4f4f4);
 }
-.annual-sunday,
-.annual-holiday {
+.annual-sunday {
   background: #287fb6;
   color: #fff;
 }
@@ -2437,6 +2436,7 @@ textarea:focus {
   bottom: 0;
   width: 15px;
   font-style: normal;
+  background: color-mix(in srgb, var(--leave-color) 70%, transparent);
 }
 .annual-leave-name {
   position: absolute;
@@ -2502,6 +2502,50 @@ textarea:focus {
 }
 .fc .fc-day-today .fc-daygrid-day-number {
   color: #fff;
+}
+
+/* Keep holiday labels visible while letting the day tint show through leave bars. */
+.fc .leave-event {
+  background: color-mix(in srgb, var(--leave-color) 70%, transparent) !important;
+  border-color: color-mix(in srgb, var(--leave-color) 70%, transparent) !important;
+}
+.fc .holiday-event {
+  color: var(--calendar-day-accent);
+  cursor: default;
+}
+.fc .holiday-event .fc-event-title {
+  white-space: normal;
+  font-size: 10px;
+  font-weight: 700;
+}
+.fc .calendar-holiday {
+  background: color-mix(in srgb, var(--calendar-day-accent) 16%, transparent);
+}
+.annual-holiday {
+  background: color-mix(in srgb, #287fb6 22%, var(--surface, #fff));
+  color: var(--text, #363636);
+}
+:root[data-theme='dark'] .annual-holiday {
+  background: color-mix(in srgb, #287fb6 30%, #1b2c46);
+}
+.annual-holiday-name {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: 2px;
+  padding: 1px 2px;
+  background: var(--surface, #fff);
+  color: var(--text, #363636);
+  font-size: 9px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.calendar-legend .holiday-legend-swatch {
+  background: #287fb638;
+  border: 1px solid #287fb6;
 }
 
 .calendar-print {

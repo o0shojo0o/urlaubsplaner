@@ -40,8 +40,14 @@ export function Modal({ title, subtitle, children, onClose, wide = false }) {
   const ref = useRef(null);
   useEffect(() => {
     const dialog = ref.current;
+    const previousFocus = document.activeElement;
     dialog.showModal();
-    return () => dialog.close();
+    return () => {
+      dialog.close();
+      requestAnimationFrame(() => {
+        if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+      });
+    };
   }, []);
   return (
     <dialog

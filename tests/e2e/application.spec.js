@@ -102,7 +102,7 @@ test('Kalenderdruck zeigt nur den gewählten Kalender und stellt die Ansicht wie
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await expect(page.getByRole('button', { name: 'Drucken', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
-  for (const view of ['Woche', 'Jahr']) {
+  for (const view of ['Monat', 'Jahr']) {
     await page.getByRole('button', { name: view, exact: true }).click();
     if (view === 'Jahr') await expect(page.locator('.annual-calendar')).toBeVisible();
     await page.getByRole('button', { name: 'Drucken', exact: true }).click();
@@ -153,4 +153,34 @@ test('Jahreskalender übernimmt markierte Bereiche und einzelne Tage in die Buch
   await expect(page.getByLabel('Letzter Urlaubstag (inklusive)', { exact: true })).toHaveValue(
     monday,
   );
+});
+
+test('Jahreskalender behält nach einer Buchung Tabelle, Scrollposition und Fokus', async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
+  await page.getByRole('button', { name: 'Jahr', exact: true }).click();
+  const day = page.locator(`.annual-day[data-date="${monday}"]`);
+  await day.scrollIntoViewIfNeeded();
+  await day.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.evaluate(() => {
+    window.savedAnnualTable = document.querySelector('.annual-calendar');
+    window.savedAnnualScroll = document.querySelector('.annual-calendar-scroll').scrollLeft;
+    window.savedPageScroll = window.scrollY;
+  });
+  await page.getByRole('button', { name: 'Urlaubstage berechnen' }).click();
+  await page.getByRole('button', { name: 'Urlaub verbindlich buchen' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(day.locator('.annual-markers i')).toHaveCount(1);
+  await expect(day).toBeFocused();
+  expect(
+    await page.evaluate(() => ({
+      sameTable: window.savedAnnualTable === document.querySelector('.annual-calendar'),
+      horizontal:
+        document.querySelector('.annual-calendar-scroll').scrollLeft === window.savedAnnualScroll,
+      vertical: window.scrollY === window.savedPageScroll,
+    })),
+  ).toEqual({ sameTable: true, horizontal: true, vertical: true });
 });

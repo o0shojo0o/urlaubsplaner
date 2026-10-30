@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import { ChevronLeft, ChevronRight, Plus, Printer } from 'lucide-react';
@@ -83,8 +82,11 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
       start: h.date,
       end: add(h.date, 1),
       allDay: true,
-      display: 'background',
-      backgroundColor: '#287fb6',
+      display: 'block',
+      classNames: ['holiday-event'],
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      textColor: 'inherit',
       extendedProps: { holiday: true },
     })),
   );
@@ -155,7 +157,6 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
             ? [['dayGridMonth', 'Monat']]
             : [
                 ['dayGridMonth', 'Monat'],
-                ['timeGridWeek', 'Woche'],
                 ['year', 'Jahr'],
               ]
           ).map(([value, label]) => (
@@ -184,7 +185,7 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
         <div className="calendar-body">
           <FullCalendar
             ref={ref}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            plugins={[dayGridPlugin, interactionPlugin]}
             locale={deLocale}
             initialView={view === 'year' ? 'dayGridMonth' : view}
             initialDate={year === Number(now().slice(0, 4)) ? now() : `${year}-01-01`}
@@ -192,13 +193,13 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
             height="auto"
             fixedWeekCount={false}
             firstDay={1}
-            allDaySlot
-            slotMinTime="08:00:00"
-            slotMaxTime="18:00:00"
             selectable
             selectMirror
             dayMaxEvents={printing ? false : 3}
             events={events}
+            eventOrder={(a, b) =>
+              Number(Boolean(b.extendedProps.holiday)) - Number(Boolean(a.extendedProps.holiday))
+            }
             dayCellClassNames={holidayClassNames}
             dayHeaderClassNames={holidayClassNames}
             eventDidMount={(info) => {
@@ -234,7 +235,7 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
       <div className="calendar-legend" style={{ flexWrap: 'wrap' }}>
         {view !== 'year' && <EmployeeLegend events={data?.items || []} />}
         <span>
-          <i style={{ background: '#e2e2e2' }} />
+          <i className="holiday-legend-swatch" />
           Feiertag
         </span>
         <span className="legend-help">
@@ -267,14 +268,18 @@ function YearGrid({ year, revision, departmentId, onSelect }) {
   };
   const selectedStart = selection && [selection.anchor, selection.end].sort()[0];
   const selectedEnd = selection && [selection.anchor, selection.end].sort()[1];
-  const [data, error] = useData(async () => {
-    const range = `start=${year}-01-01&endExclusive=${year + 1}-01-01`;
-    const [events, holidays] = await Promise.all([
-      allPages(`/calendar?${range}${departmentId ? `&departmentId=${departmentId}` : ''}`),
-      api(`/holidays?${range}`),
-    ]);
-    return { events, holidays };
-  }, [year, revision, departmentId]);
+  const [data, error] = useData(
+    async () => {
+      const range = `start=${year}-01-01&endExclusive=${year + 1}-01-01`;
+      const [events, holidays] = await Promise.all([
+        allPages(`/calendar?${range}${departmentId ? `&departmentId=${departmentId}` : ''}`),
+        api(`/holidays?${range}`),
+      ]);
+      return { events, holidays };
+    },
+    [year, revision, departmentId],
+    { keepPreviousData: true },
+  );
   const monthLanes = months.map((_, m) => {
     const start = `${year}-${String(m + 1).padStart(2, '0')}-01`;
     const end = `${year}-${String(m + 1).padStart(2, '0')}-${new Date(Date.UTC(year, m + 1, 0)).getUTCDate()}`;
@@ -344,6 +349,7 @@ function YearGrid({ year, revision, departmentId, onSelect }) {
                         aria-current={day === now() ? 'date' : undefined}
                         onPointerDown={(event) => {
                           if (event.button !== 0 || !event.isPrimary) return;
+                          event.currentTarget.focus({ preventScroll: true });
                           event.currentTarget.setPointerCapture(event.pointerId);
                           const next = { anchor: day, end: day };
                           selectionRef.current = next;
@@ -380,9 +386,17 @@ function YearGrid({ year, revision, departmentId, onSelect }) {
                       >
                         <span>{String(i + 1).padStart(2, '0')}</span>
                         <small>{weekdays[weekday]}</small>
+                        {holidays.length > 0 && (
+                          <span className="annual-holiday-name">
+                            {[...new Set(holidays.map((h) => h.name))].join(' · ')}
+                          </span>
+                        )}
                         <span className="annual-markers" aria-hidden="true">
                           {booked.map((v) => (
-                            <i key={v.id} style={{ background: v.color, left: `${v.lane * 17}px` }}>
+                            <i
+                              key={v.id}
+                              style={{ '--leave-color': v.color, left: `${v.lane * 17}px` }}
+                            >
                               {day === v.visibleStart && (
                                 <span
                                   className="annual-leave-name"
