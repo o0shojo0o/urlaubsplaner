@@ -9,8 +9,20 @@ import { api, allPages } from '../api.js';
 import { now, add, fmt, days, months, weekdays } from '../lib/format.js';
 import { ErrorBox, Loading } from './ui.jsx';
 import { useData } from '../hooks/useData.js';
-export function CalendarPanel({ user, year, revision, openBooking, compact = false }) {
+import { schoolRegions } from '../lib/schoolRegions.js';
+export function CalendarPanel({
+  user,
+  year,
+  revision,
+  openBooking,
+  onYearChange,
+  compact = false,
+}) {
   const ref = useRef(null),
+    [schoolState, setSchoolState] = useState(() => {
+      const value = localStorage.getItem('schoolHolidayRegion');
+      return schoolRegions[value] ? value : '';
+    }),
     [title, setTitle] = useState(''),
     [view, setView] = useState(compact ? 'dayGridMonth' : 'year'),
     [printing, setPrinting] = useState(false),
@@ -59,6 +71,14 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
     ]);
     return { items, holidays };
   }, [range?.start, range?.end, revision, departmentId]);
+  const schoolStart = view === 'year' ? `${year}-01-01` : range?.start;
+  const schoolEnd = view === 'year' ? `${year + 1}-01-01` : range?.end;
+  const [schoolHolidays, schoolError] = useData(async () => {
+    if (!schoolState || !schoolStart || !schoolEnd) return [];
+    return api(
+      `/school-holidays?region=${schoolState}&start=${schoolStart}&endExclusive=${schoolEnd}`,
+    );
+  }, [schoolState, schoolStart, schoolEnd]);
   const holidayClassNames = (info) => {
     const date = `${info.date.getFullYear()}-${String(info.date.getMonth() + 1).padStart(2, '0')}-${String(info.date.getDate()).padStart(2, '0')}`;
     return data?.holidays.some((h) => h.date === date) ? ['calendar-holiday'] : [];
@@ -90,6 +110,18 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
       extendedProps: { holiday: true },
     })),
   );
+  events.push(
+    ...(schoolState ? schoolHolidays || [] : []).map((h) => ({
+      id: `school-${h.id}`,
+      title: h.name,
+      start: h.startDate,
+      end: add(h.endDate, 1),
+      allDay: true,
+      display: 'background',
+      classNames: ['school-holiday-event'],
+      extendedProps: { holiday: true },
+    })),
+  );
   return (
     <section className={`panel calendar-panel ${compact ? 'compact' : ''}`}>
       <header className="panel-heading">
@@ -103,10 +135,23 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
             {user.role === 'ADMIN' ? 'Unternehmensübersicht' : 'Nur deine Abteilung'}
           </p>
         </div>
-        <span className="calendar-badge">
-          <span className="online-dot" />
-          {compact ? 'Live' : 'Automatisch gebucht'}
-        </span>
+        {onYearChange ? (
+          <select
+            className="calendar-year-select"
+            aria-label="Jahr"
+            value={year}
+            onChange={(e) => onYearChange(Number(e.target.value))}
+          >
+            {Array.from({ length: 7 }, (_, i) => Number(now().slice(0, 4)) - 2 + i).map((y) => (
+              <option key={y}>{y}</option>
+            ))}
+          </select>
+        ) : (
+          <span className="calendar-badge">
+            <span className="online-dot" />
+            {compact ? 'Live' : 'Automatisch gebucht'}
+          </span>
+        )}
       </header>
       {!compact && user.role === 'ADMIN' && (
         <div className="calendar-filter">
@@ -123,6 +168,35 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
           </label>
         </div>
       )}
+      <div className="calendar-filter school-holiday-filter">
+        <label>
+          Schulferien
+          <select
+            aria-label="Bundesland für Schulferien"
+            value={schoolState}
+            onChange={(e) => {
+              setSchoolState(e.target.value);
+              localStorage.setItem('schoolHolidayRegion', e.target.value);
+            }}
+          >
+            <option value="">Schulferien ausblenden</option>
+            {Object.entries(schoolRegions).map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {schoolState && (
+          <small>
+            Quelle:{' '}
+            <a href="https://www.openholidaysapi.org/de/" target="_blank" rel="noreferrer">
+              OpenHolidays
+            </a>{' '}
+            · nur zur Orientierung
+          </small>
+        )}
+      </div>
       <div className="calendar-toolbar">
         <div className="calendar-period">
           <h3>{view === 'year' ? year : title}</h3>
@@ -173,10 +247,11 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
           ))}
         </div>
       </div>
-      <ErrorBox error={error || calendarError} />
+      <ErrorBox error={error || calendarError || schoolError} />
       {view === 'year' ? (
         <YearGrid
           user={user}
+          schoolHolidays={schoolState ? schoolHolidays || [] : []}
           year={year}
           revision={revision}
           departmentId={departmentId}
@@ -239,6 +314,12 @@ export function CalendarPanel({ user, year, revision, openBooking, compact = fal
           <i className="holiday-legend-swatch" />
           Feiertag
         </span>
+        {schoolState && (
+          <span>
+            <i className="school-holiday-swatch" />
+            Schulferien · {schoolRegions[schoolState]}
+          </span>
+        )}
         <span className="legend-help">
           Tage auswählen, um Urlaub zu buchen
           <Plus size={13} />
@@ -260,7 +341,7 @@ function EmployeeLegend({ events }) {
   ));
 }
 
-function YearGrid({ user, year, revision, departmentId, onSelect }) {
+function YearGrid({ user, year, revision, departmentId, onSelect, schoolHolidays }) {
   const selectionRef = useRef(null);
   const [selection, setSelection] = useState(null);
   const [hoveredBookingId, setHoveredBookingId] = useState(null);
@@ -333,15 +414,19 @@ function YearGrid({ user, year, revision, departmentId, onSelect }) {
                     (v) => v.startDate <= day && v.endDate >= day,
                   );
                   const holidays = data?.holidays.filter((h) => h.date === day) || [];
+                  const schoolBreaks = schoolHolidays.filter(
+                    (h) => h.startDate <= day && h.endDate >= day,
+                  );
                   const description = [
                     fmt(day, { weekday: 'long', year: 'numeric' }),
                     ...holidays.map((h) => h.name),
+                    ...schoolBreaks.map((h) => `${h.name}${h.note ? ` (${h.note})` : ''}`),
                     ...booked.map((v) => v.displayName),
                   ].join(' · ');
                   return (
                     <td
                       key={month}
-                      className={`${weekday >= 5 ? 'annual-weekend' : ''} ${weekday === 6 ? 'annual-sunday' : ''} ${holidays.length ? 'annual-holiday' : ''}`}
+                      className={`${weekday >= 5 ? 'annual-weekend' : ''} ${weekday === 6 ? 'annual-sunday' : ''} ${holidays.length ? 'annual-holiday' : ''} ${schoolBreaks.length ? 'annual-school-holiday' : ''}`}
                     >
                       <button
                         data-date={day}
@@ -393,6 +478,12 @@ function YearGrid({ user, year, revision, departmentId, onSelect }) {
                             {[...new Set(holidays.map((h) => h.name))].join(' · ')}
                           </span>
                         )}
+                        {!holidays.length &&
+                          schoolBreaks.some((h) => h.startDate === day || i === 0) && (
+                            <span className="annual-school-name">
+                              {[...new Set(schoolBreaks.map((h) => h.name))].join(' · ')}
+                            </span>
+                          )}
                       </button>
                       <span className="annual-markers">
                         {booked.map((v) => (

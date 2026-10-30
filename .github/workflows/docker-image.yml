@@ -87,6 +87,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.image.outputs.tags }}
+          build-args: |
+            APP_VERSION=${{ steps.image.outputs.version }}
+            APP_REVISION=${{ steps.image.outputs.revision }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ steps.image.outputs.revision }}

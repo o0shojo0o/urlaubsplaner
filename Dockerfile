@@ -8,9 +8,14 @@ COPY prisma ./prisma
 COPY prisma.config.ts ./
 RUN npm ci
 COPY . .
-RUN npm run build && npm prune --omit=dev
+ARG APP_VERSION
+ARG APP_REVISION
+RUN APP_VERSION="$APP_VERSION" APP_REVISION="$APP_REVISION" npm run build && npm prune --omit=dev
 
 FROM node:24-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS runtime
+ARG APP_VERSION
+ARG APP_REVISION
+ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION} APP_DEPLOYMENT=Docker
 ENV NODE_ENV=production PORT=3000 DATABASE_URL=file:/app/data/urlaubsplaner.db HOME=/tmp CHECKPOINT_DISABLE=1
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates gosu && rm -rf /var/lib/apt/lists/* && mkdir -p /app/data && chown node:node /app/data

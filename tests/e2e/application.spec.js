@@ -211,3 +211,85 @@ test('Jahreskalender behält nach einer Buchung Tabelle, Scrollposition und Foku
   );
   await expect(page.getByRole('button', { name: 'Stornieren', exact: true })).toBeVisible();
 });
+
+test('Schulferien werden nach Bundesland online geladen und in Jahr und Monat angezeigt', async ({
+  page,
+}) => {
+  await page.route('**/school-holidays?**', (route) => {
+    expect(new URL(route.request().url()).searchParams.get('region')).toBe('SH');
+    return route.fulfill({
+      json: [
+        {
+          id: 'school-summer',
+          startDate: `${year}-07-03`,
+          endDate: `${year}-08-14`,
+          name: 'Sommerferien',
+          note: '',
+        },
+      ],
+    });
+  });
+  await login(page);
+  await page.getByRole('button', { name: 'Teamkalender', exact: true }).click();
+  await page.getByLabel('Bundesland für Schulferien').selectOption('SH');
+  await expect(page.locator('.annual-school-holiday')).toHaveCount(43);
+  await expect(page.locator('.annual-school-holiday').first()).toHaveCSS(
+    'background-image',
+    /linear-gradient/,
+  );
+  await expect(page.locator('.annual-school-name').first()).toHaveText('Sommerferien');
+  await page.getByRole('button', { name: 'Monat', exact: true }).click();
+  await page
+    .getByLabel('Bundesland für Schulferien')
+    .selectOption({ label: 'Schulferien ausblenden' });
+  await expect(page.locator('.school-holiday-event')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Jahr', exact: true }).click();
+  await expect(page.locator('.annual-school-holiday')).toHaveCount(0);
+});
+
+test('Feedback öffnet einen vorausgefüllten GitHub-Entwurf für das eigene Konto', async ({
+  page,
+  context,
+}) => {
+  await page.route('**/api/v1/system-info', (route) =>
+    route.fulfill({
+      json: {
+        appVersion: 'v2.3.4',
+        revision: 'abc123',
+        deployment: 'Docker',
+        runtime: 'Node.js v24.0.0',
+        platform: 'linux / arm64',
+      },
+    }),
+  );
+  await context.route('https://github.com/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<h1>GitHub-Entwurf</h1>' }),
+  );
+  await login(page);
+  await page.getByRole('button', { name: 'Fehler oder Idee melden' }).click();
+  await expect(page.getByRole('dialog')).toContainText('eigenen GitHub-Konto');
+  await expect(page.getByRole('button', { name: 'Auf GitHub weiter' })).toBeDisabled();
+  await page.getByLabel('Art der Meldung').selectOption('idea');
+  await page.getByLabel('Titel', { exact: true }).fill('Neue Kalenderidee');
+  await page
+    .getByLabel('Beschreibung', { exact: true })
+    .fill('Eine hilfreiche Verbesserung für den Kalender.');
+  await expect(page.getByLabel('Systeminformationen', { exact: true })).toContainText(
+    'Server-Version: v2.3.4',
+  );
+  const opened = context.waitForEvent('page');
+  await page.getByRole('button', { name: 'Auf GitHub weiter' }).click();
+  const draft = await opened;
+  await draft.waitForURL('https://github.com/o0shojo0o/urlaubsplaner/issues/new?**');
+  const url = new URL(draft.url());
+  expect(url.searchParams.get('title')).toBe('[Idee] Neue Kalenderidee');
+  expect(url.searchParams.get('body')).toContain('Eine hilfreiche Verbesserung für den Kalender.');
+  expect(url.searchParams.get('body')).toContain('Server-Version: v2.3.4');
+  expect(url.searchParams.get('body')).toContain('Betriebsart: Docker');
+  expect(url.searchParams.get('body')).toContain('Browser:');
+  expect(url.searchParams.get('body')).not.toContain('mia@example.test');
+  expect(url.searchParams.get('body')).not.toContain('127.0.0.1');
+  await expect(page.getByLabel('Beschreibung', { exact: true })).toHaveValue(
+    'Eine hilfreiche Verbesserung für den Kalender.',
+  );
+});

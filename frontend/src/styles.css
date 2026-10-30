@@ -385,6 +385,7 @@ textarea {
 }
 .heading-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
@@ -2679,4 +2680,67 @@ textarea:focus {
     gap: 6px 14px;
     font-size: 9px;
   }
+}
+
+.school-holiday-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.school-holiday-filter small {
+  color: var(--muted-text, #6f6f6f);
+}
+.annual-school-holiday {
+  box-shadow: inset 3px 0 #4b9c83;
+}
+.annual-school-holiday:not(.annual-holiday) {
+  background-image: linear-gradient(#4b9c830c, #4b9c830c);
+}
+:root[data-theme='dark'] .annual-school-holiday:not(.annual-holiday) {
+  background-image: linear-gradient(#4b9c8312, #4b9c8312);
+}
+.annual-school-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  color: #327c66;
+}
+:root[data-theme='dark'] .annual-school-name {
+  color: #8dccb5;
+}
+.fc .school-holiday-event {
+  background: #4b9c830c !important;
+  border-left: 3px solid #4b9c83;
+}
+.fc .school-holiday-event .fc-event-title {
+  color: #327c66;
+}
+:root[data-theme='dark'] .fc .school-holiday-event .fc-event-title {
+  color: #8dccb5;
+}
+.calendar-legend .school-holiday-swatch {
+  background: #4b9c8333;
+  border-left: 3px solid #4b9c83;
+}
+
+.fc .calendar-holiday .school-holiday-event {
+  background: transparent !important;
+}
+
+.calendar-year-select {
+  width: auto;
+  min-width: 86px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.feedback-button {
+  white-space: nowrap;
+}
+.feedback-disclosure {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted-text, #6f6f6f);
 }

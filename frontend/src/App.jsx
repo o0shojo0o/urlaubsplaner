@@ -12,12 +12,14 @@ import {
   Plus,
   Menu,
   CheckCircle2,
+  MessageSquarePlus,
   X,
 } from 'lucide-react';
 import { api, initCsrf, send } from './api.js';
 import { now, fmt, initials } from './lib/format.js';
 import { Loading, ErrorBox } from './components/ui.jsx';
 import { CalendarPanel } from './components/CalendarPanel.jsx';
+import { FeedbackModal } from './components/FeedbackModal.jsx';
 import { BookingModal } from './components/BookingModal.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Login } from './pages/Login.jsx';
@@ -35,6 +37,7 @@ export default function App() {
     [year, setYear] = useState(Number(now().slice(0, 4))),
     [revision, setRevision] = useState(0),
     [booking, setBooking] = useState(null),
+    [feedbackOpen, setFeedbackOpen] = useState(false),
     [toast, setToast] = useState(''),
     [mobile, setMobile] = useState(false);
   const [activation, setActivation] = useState(
@@ -240,7 +243,7 @@ export default function App() {
               </p>
             </div>
             <div className="heading-actions">
-              {['dashboard', 'vacations', 'calendar'].includes(page) && (
+              {['dashboard', 'vacations'].includes(page) && (
                 <select
                   aria-label="Jahr"
                   value={year}
@@ -253,6 +256,13 @@ export default function App() {
                   )}
                 </select>
               )}
+              <button
+                className="button secondary feedback-button"
+                onClick={() => setFeedbackOpen(true)}
+              >
+                <MessageSquarePlus size={17} />
+                Fehler oder Idee melden
+              </button>
               <button
                 className="button primary"
                 onClick={() => setBooking({ startDate: now(), endDate: now() })}
@@ -273,7 +283,13 @@ export default function App() {
             />
           )}
           {page === 'calendar' && (
-            <CalendarPanel user={user} year={year} revision={revision} openBooking={setBooking} />
+            <CalendarPanel
+              user={user}
+              year={year}
+              onYearChange={setYear}
+              revision={revision}
+              openBooking={setBooking}
+            />
           )}
           {page === 'vacations' && (
             <MyVacations user={user} year={year} revision={revision} openBooking={setBooking} />
@@ -311,6 +327,9 @@ export default function App() {
           </footer>
         </main>
       </div>
+      {feedbackOpen && (
+        <FeedbackModal page={page} year={year} onClose={() => setFeedbackOpen(false)} />
+      )}
       {booking && (
         <BookingModal
           initial={booking}

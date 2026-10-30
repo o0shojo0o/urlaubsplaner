@@ -1,4 +1,6 @@
 import express from 'express';
+import { systemInfo } from './system-info.js';
+import { loadSchoolHolidays, schoolRegion } from './school-holidays.js';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
@@ -102,6 +104,7 @@ export function createApp({ rateLimits = true } = {}) {
       settings: await db.setting.findUnique({ where: { id: 'company' } }),
     });
   });
+  api.get('/system-info', (req, res) => res.json(systemInfo()));
   api.get('/me/work-schedules', async (req, res) =>
     res.json(
       await db.workSchedule.findMany({
@@ -183,6 +186,15 @@ export function createApp({ rateLimits = true } = {}) {
       })),
       total: await db.vacation.count({ where }),
     });
+  });
+  api.get('/school-holidays', async (req, res) => {
+    res.json(
+      await loadSchoolHolidays(
+        schoolRegion.parse(req.query.region),
+        date.parse(req.query.start),
+        date.parse(req.query.endExclusive),
+      ),
+    );
   });
   api.get('/holidays', async (req, res) => {
     const start = date.parse(req.query.start),
@@ -268,11 +280,9 @@ export function createApp({ rateLimits = true } = {}) {
     adminRoutes(),
   );
   api.use((req, res) =>
-    res
-      .status(404)
-      .json({
-        error: { code: 'NOT_FOUND', message: 'API-Route nicht gefunden.', requestId: req.id },
-      }),
+    res.status(404).json({
+      error: { code: 'NOT_FOUND', message: 'API-Route nicht gefunden.', requestId: req.id },
+    }),
   );
   app.use('/api/v1', api);
   app.use('/api', (req, res) =>
@@ -312,16 +322,14 @@ export function createApp({ rateLimits = true } = {}) {
           : 'Ein interner Fehler ist aufgetreten.';
     }
     if (status === 503) res.set('Retry-After', '2');
-    res
-      .status(status)
-      .json({
-        error: {
-          code,
-          message,
-          ...(err.details ? { details: err.details } : {}),
-          requestId: req.id,
-        },
-      });
+    res.status(status).json({
+      error: {
+        code,
+        message,
+        ...(err.details ? { details: err.details } : {}),
+        requestId: req.id,
+      },
+    });
   });
   return app;
 }

@@ -4121,6 +4121,106 @@
           }
         }
       }
+    },
+    "/school-holidays": {
+      "get": {
+        "summary": "Schulferien online nach Bundesland und Zeitraum abrufen",
+        "tags": [
+          "Kalender"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BW",
+                "BY",
+                "BE",
+                "BB",
+                "HB",
+                "HH",
+                "HE",
+                "MV",
+                "NI",
+                "NW",
+                "RP",
+                "SL",
+                "SN",
+                "ST",
+                "SH",
+                "TH"
+              ]
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endExclusive",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ferienzeiträume mit id, startDate, endDate (inklusive), name und note; bis zu sechs Stunden zwischengespeichert."
+          },
+          "400": {
+            "description": "Ungültiges Bundesland oder Zeitraum (maximal 366 Tage)."
+          },
+          "502": {
+            "description": "Anbieter nicht erreichbar oder noch keine Daten verfügbar."
+          }
+        }
+      }
+    },
+    "/system-info": {
+      "get": {
+        "summary": "Technische Versionsangaben der angemeldeten Installation für Feedback",
+        "responses": {
+          "200": {
+            "description": "Freigegebene Servermetadaten ohne Hostnamen, Pfade oder Nutzerangaben.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "appVersion": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "deployment": {
+                      "type": "string"
+                    },
+                    "runtime": {
+                      "type": "string"
+                    },
+                    "platform": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

@@ -76,3 +76,9 @@ docker compose up -d
 - [Entwicklung, Tests und Releases](docs/ENTWICKLUNG.md)
 - [Fachliche Regeln](docs/FACHLICHE_REGELN.md)
 - [API](docs/openapi.yaml), [Prüfprotokoll](docs/PRUEFPROTOKOLL.md) und [technischer Umsetzungsplan](docs/TECHNISCHER_UMSETZUNGSPLAN.md)
+
+## Fehler und Ideen über GitHub melden
+
+Über „Fehler oder Idee melden“ im Seitenfuß erfassen Nutzer Art, Titel und Beschreibung. „Auf GitHub weiter“ öffnet ein vorausgefülltes Issue im Repository `o0shojo0o/urlaubsplaner`. Dort prüft der Nutzer den Entwurf und erstellt das Issue unter seinem eigenen angemeldeten GitHub-Konto. Falls nötig, erfolgt die Anmeldung direkt bei GitHub. Der Urlaubsplaner benötigt und speichert dafür keine GitHub-Tokens. Namen, E-Mail-Adressen und Buchungsdaten werden nicht automatisch angehängt.
+
+Das Feedbackformular ergänzt bearbeitbare Systeminformationen: Frontend- und Serverversion, Revision, Betriebsart, Node.js-Version, Serverplattform sowie Browser, Sprache, Zeitzone, Fenstergröße und aktuelle Ansicht. Hostname, Instanzadresse, Datenbankpfade und Nutzerangaben werden nicht automatisch übernommen. Selbsthoster können `APP_VERSION`, `APP_REVISION` und `APP_DEPLOYMENT` setzen; für Frontendangaben die Versionswerte bereits beim Build setzen. Ohne explizite Versionsangabe wird die Version aus `package.json` verwendet. Release-Docker-Images enthalten Releaseversion und Commit automatisch. Die Systeminformationen sind vor der Weitergabe im Formular sichtbar und editierbar.
