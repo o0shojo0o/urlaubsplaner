@@ -2425,6 +2425,8 @@ textarea:focus {
 }
 .annual-markers {
   position: absolute;
+  z-index: 4;
+  pointer-events: none;
   left: 43px;
   right: 2px;
   top: -1px;
