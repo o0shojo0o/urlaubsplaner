@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS build
+FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS build
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
@@ -12,7 +12,7 @@ ARG APP_VERSION
 ARG APP_REVISION
 RUN APP_VERSION="$APP_VERSION" APP_REVISION="$APP_REVISION" npm run build && npm prune --omit=dev
 
-FROM node:24-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS runtime
+FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS runtime
 ARG APP_VERSION
 ARG APP_REVISION
 ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION} APP_DEPLOYMENT=Docker
